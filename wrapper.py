@@ -79,8 +79,12 @@ class Wrapper:
                 # User has entered a new statement right on our previously modified prompt,
                 # so => was lost when flushing output log
                 previous_prompt_ends_at = -1
+
+                            
+            decoded_stmt_and_result: str = bytes.decode(psql_log[previous_prompt_ends_at+1:]) + bytes.decode(latest_output[:latest_output.find(prompt)])
             
-            decoded_stmt_and_result: str = bytes.decode(psql_log[previous_prompt_ends_at+1:])
+            if self.debug:
+                self.fout.write(decoded_stmt_and_result)
 
             helpful_message: str = "Helpful message" # give_message_for(decoded_stmt_and_result)
             
