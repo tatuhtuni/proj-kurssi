@@ -1,5 +1,7 @@
-from typing import TextIO
+from typing import Callable, TextIO
 import pexpect
+
+import psqlparser
 
 # ANSI escape codes (\x1b[) used by psql:
 # K clear part of the line
@@ -19,13 +21,15 @@ class Wrapper:
     input_log: bytes = b''
     output_log: bytes = b''
     db_name: bytes = b''
+    analyze: Callable[str, str]
 
-    def __init__(self, db_name_parameter: bytes):
+    def __init__(self, db_name_parameter: bytes, hook_f: Callable[str, str], parser: psqlparser.PsqlParser):
         """
         Start wrapper on selected database.
         """
 
         self.db_name = db_name_parameter
+        self.analyze = hook_f
 
         c = pexpect.spawn("psql " + bytes.decode(self.db_name),
                           encoding="utf-8",
@@ -84,7 +88,7 @@ class Wrapper:
             if self.debug:
                 self.fout.write(decoded_stmt_and_result)
 
-            helpful_message: str = "Helpful message"  # give_message_for(decoded_stmt_and_result)
+            helpful_message: str = analyze(decoded_stmt_and_result)
 
             return self.replace_prompt(helpful_message,
                                        latest_output)
