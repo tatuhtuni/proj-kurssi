@@ -13,7 +13,8 @@ import psqlparser
 # >
 # =
 
-class Wrapper:
+
+class PsqlWrapper:
 
     debug: bool = True
     fout: TextIO
