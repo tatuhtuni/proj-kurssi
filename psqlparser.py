@@ -1,62 +1,107 @@
-from typing import TextIO
-from pyparsing import CaselessLiteral, Char, MatchFirst, OneOrMore, ParserElement, Word, \
+"""Parse psql output."""
+
+from typing import List, TextIO
+from pyparsing import CaselessLiteral, Char, Literal, MatchFirst, OneOrMore, \
+    ParseException, ParseResults, ParserElement, SkipTo, Word, \
     identbodychars
 from string import printable
+
+ParserElement.enablePackrat(None)  # memoization optimization
 
 
 class PsqlParser:
     """Parses psql output for syntactic analysis."""
 
     # class debug
-    debug: bool = True
+    debug: bool = False
     fout: TextIO
 
-    prompt_chars = identbodychars
-    stmt_end = ";"
-    # SQL statement body can contain all printable characters (incl. whitespace), but not ';'
-    stmt_chars = \
-        printable.translate(str.maketrans("", "", stmt_end))
-    
+    prompt_chars: str = identbodychars
+    control_codes: str = '\x1b' + '\x08'
+    stmt_end: str = ";"
+    # Naively, SQL statement body can contain all printable characters
+    # (incl. whitespace), apart from ';'
+    stmt_chars: str = \
+        printable.translate(str.maketrans("", "", stmt_end)) + control_codes
+
     # parser tokens:
     # superusers have =# prompt
     tok_prompt: ParserElement = \
-        Word(prompt_chars) + CaselessLiteral("=>") | CaselessLiteral("=#")
-    # one_of(["=>", "=#"])
-    tok_prompt_newline: ParserElement = \
+        Word(prompt_chars) + (CaselessLiteral("=>") | CaselessLiteral("=#"))
+    tok_prompt_linebreak: ParserElement = \
         CaselessLiteral("->") | CaselessLiteral("-#")
-    # one_of(["->", "-#"])    
-    tok_semicolon: ParserElement = \
+    tok_stmt_end: ParserElement = \
         Char(';')
 
     # parser combinations
     match_prompt: ParserElement = \
         MatchFirst([tok_prompt])
+    match_sql_stmt_start: ParserElement = \
+        CaselessLiteral("SELECT ")  # All interesting stmts are 'select'
     match_sql_stmt: ParserElement = \
         Word(stmt_chars)
-    match_stmt_end: ParserElement = \
-        Word(stmt_end)
+    match_sql_stmt_end: ParserElement = \
+        tok_stmt_end
+    match_error: ParserElement = \
+        Literal("ERROR:")
 
     # TODO: allow multiple statements
     parse_sql_stmt: ParserElement = \
-        match_prompt + match_sql_stmt + match_stmt_end
+        match_prompt + match_sql_stmt + match_sql_stmt_end
 
     def __init__(self):
         """Plain constructor for PsqlParser."""
         if self.debug:
             self.fout = open('psqlparser.log', 'w')
 
-    def parse_first_found_stmt(self, psql: str) -> str:
-        """Find first statement in psql output.
-    
-        Expected to be eventually deprecated.
-        """
-#        print(psql)
-        for res, start, end in self.parse_sql_stmt.scan_string(psql):
-            print(res)
-            print(start)
-            print(end)
-        return ""
+    def parse_for_new_prompt(self, psql: str) -> List[str]:
+        """Parse for an empty prompt, usually to detect when a query \
+        evaluation has ended.
 
-if __name__ == "__main__":
-    p = PsqlParser()
-    p.parse_first_found_stmt("pgdb=> SELECT * FROM orders;")
+        Returns an empty list if none found.
+        """
+        results: List[str] = []
+        prompt_res: ParseResults = None
+        try:
+            prompt_res = self.match_prompt.parse_string(psql)
+        except ParseException as e:
+            if self.debug:
+                print(e.explain())
+
+        if prompt_res:
+            results = prompt_res.as_list()
+        return results
+
+    def parse_first_found_stmt(self, psql: str) -> List[str]:
+        """Parse for the content between two prompts. Returns an empty \
+        list if there is no statement or there was an error.
+
+        Expected to be deprecated when detecting multiple statements is
+        implemented.
+        """
+        match_stmt: ParserElement = \
+            ... + self.match_sql_stmt_start + self.match_sql_stmt + \
+            self.match_sql_stmt_end
+        match_query_error: ParserElement = \
+            SkipTo(self.match_error)
+
+        results: List[str] = []
+        stmt_res: ParseResults = None
+        error_res: ParseResults = None
+        try:
+            stmt_res = match_stmt.parse_string(psql)
+        except ParseException as e:
+            if self.debug:
+                print(e.explain())
+        try:
+            error_res = match_query_error.parse_string(psql)
+        except ParseException as e:
+            if self.debug: 
+                print(e.explain())
+
+        if stmt_res:
+            stmt_res_list = stmt_res.as_list()
+            results = [stmt_res_list[1], stmt_res_list[2], stmt_res_list[3]]
+        if error_res:
+            results = []
+        return results
