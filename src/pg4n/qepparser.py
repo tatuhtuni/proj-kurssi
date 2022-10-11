@@ -1,6 +1,6 @@
 from typing import Callable, Iterable, List, TypedDict
-import psycopg2
-from psycopg2.extensions import connection
+import psycopg
+from psycopg import Connection
 
 
 # TODO: break into variants discriminated by Node Type
@@ -109,7 +109,7 @@ class QEPParser:
 
     def __init__(self, *args, conn=None,  **kwargs):
         self._ref = not not conn
-        self._conn: connection = conn or psycopg2.connect(*args, **kwargs)
+        self._conn: Connection = conn or psycopg.connect(*args, **kwargs)
 
     def __del__(self):
         if not self._ref:

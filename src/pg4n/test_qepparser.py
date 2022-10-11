@@ -1,15 +1,15 @@
 import pytest
-import psycopg2
+import psycopg
 
 from os import getenv
 from pytest_postgresql import factories
-from psycopg2.extensions import connection
+from psycopg import Connection
 
-import qepparser
+from pg4n import qepparser
 
 
 def load_database(**kwargs):
-    conn: connection = psycopg2.connect(**kwargs)
+    conn: Connection = psycopg.connect(**kwargs)
     with conn.cursor() as cur:
         cur.execute("""
         -- for copy-and-pasting
@@ -47,7 +47,7 @@ postgresql = factories.postgresql("postgresql_in_docker")
 
 
 @pytest.fixture
-def parser(postgresql: connection):
+def parser(postgresql: Connection):
     return qepparser.QEPParser(conn=postgresql)
 
 
