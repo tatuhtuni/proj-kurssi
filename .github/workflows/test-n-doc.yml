@@ -19,7 +19,7 @@ jobs:
           --health-retries 5
         ports:
           - 5432:5432
-          
+
     steps:
       - uses: actions/checkout@v2
 
@@ -63,3 +63,7 @@ jobs:
       # generate docs
       - run: poetry run sphinx-build -b html src build
         if: github.event_name == 'push'
+      - uses: JamesIves/github-pages-deploy-action@v4
+        if: github.event_name == 'push'
+        with:
+          folder: build # The folder the action should deploy.
