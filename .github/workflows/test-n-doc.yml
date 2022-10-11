@@ -61,7 +61,7 @@ jobs:
           PGPASSWORD: postgres
 
       # generate docs
-      - run: poetry run sphinx-build -b html src build
+      - run: poetry run sphinx-build -b html src build && touch build/.nojekyll
         if: github.event_name == 'push'
       - uses: JamesIves/github-pages-deploy-action@v4
         if: github.event_name == 'push'
