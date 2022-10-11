@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "pg4n"
+version = "0.1.0"
+description = "PostgreSQL for novices - helps debug PostgreSQL queries"
+authors = [
+    "Ella Elomaa <ella.elomaa@tuni.fi>",
+    "Jesper Niemelä <jesper.niemela@tuni.fi>",
+    "Joni Nikki <joni.nikki@tuni.fi>",
+    "Mikko Autio <mikko.auto@tuni.fi>",
+    "Tatu Heikkilä <tatu.heikkila@tuni.fi>",
+    "Tatu Sirkeoja <tatu.sirkeoja@tuni.fi>",
+]
+readme = "README.md"
+packages = [{ include = "pg4n", from = "src" }]
+
+[tool.poetry.scripts]
+pg4n = "pg4n:main"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+sqlglot = "^6.3.2"
+pytest = "^7.1.3"
+sphinx = "^5.2.3"
