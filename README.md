@@ -4,19 +4,19 @@
 
 ## Notes for developers
 
-### Imports
-
-You must run the program as a module, e.g., `python -m src.pg4n.main`, so that the imports work.
-
 ### Poetry
 
 This project uses [Poetry](https://python-poetry.org/) for packaging. Although one should refer to [Poetry docs](https://python-poetry.org/docs/) for a thorough introduction, here's a short summary of the intended workflow with Poetry:
 
 - To make VS Code use Poetry's virtual environment, type `poetry env info`, copy virtual environment executable path, press F1 and type `Python: Select Interpreter` > `Enter interpreter path...` > paste path and press `<ENTER>`.
-- To install all dependencies and the application, type `poetry install`.
+- To install all dependencies and the application, type `poetry install`. After installation, if the Python scripts folder is in your PATH, you should be able to invoke `main.main()` with `pg4n`.
 - To add/remove a dependency, type `poetry add <dep>`/`poetry remove <dep>`.
 - To execute a command from within virtual environment shell, type `poetry run <cmd>`.
 - To enter a shell session within the Poetry virtual environment, type `poetry shell`.
+
+### Imports
+
+During development, you must run the program as a module, e.g., `poetry run python -m src.pg4n.main`, so that the imports work.
 
 ### Running tests
 

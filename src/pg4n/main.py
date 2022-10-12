@@ -1,4 +1,4 @@
-if __name__ == "__main__":
+def main():
     import os
     import sys
 
@@ -11,3 +11,7 @@ if __name__ == "__main__":
                                        psqlparser.PsqlParser())
     else:
         print(f"{os.path.basename(sys.executable)} main.py <database name>")
+
+
+if __name__ == "__main__":
+    main()

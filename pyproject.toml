@@ -14,7 +14,7 @@ readme = "README.md"
 packages = [{ include = "pg4n", from = "src" }]
 
 [tool.poetry.scripts]
-pg4n = "pg4n:main"
+pg4n = "pg4n:main.main"
 
 [tool.poetry.dependencies]
 python = "^3.10"
