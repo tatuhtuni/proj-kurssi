@@ -54,11 +54,14 @@ jobs:
           PGUSER: postgres
           PGPASSWORD: postgres
 
-      - run: poetry run sphinx-build -b html src build && touch build/.nojekyll
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - run: |
+          poetry run sphinx-apidoc -q -f -o docs/api src/pg4n '*/test_*' && \
+          poetry run sphinx-build -q -b html docs docs/build && \
+          touch docs/build/.nojekyll
+        # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       - uses: JamesIves/github-pages-deploy-action@v4
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         with:
-          folder: build
+          folder: docs/build
           git-config-name: github-actions
           git-config-email: <>

@@ -1,8 +1,8 @@
 import os
 import sys
 
-import psqlparser
-import psqlwrapper
+from pg4n import psqlparser
+from pg4n import psqlwrapper
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:

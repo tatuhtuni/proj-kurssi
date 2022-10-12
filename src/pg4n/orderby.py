@@ -1,8 +1,9 @@
 import sys
 import subprocess
 import sqlglot
-import sqlparser
 from pprint import pprint
+
+from pg4n import sqlparser
 
 
 def has_subquery_order_by(sql: sqlglot.exp.Expression, qep: str) -> bool:

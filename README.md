@@ -8,7 +8,7 @@ This project uses [Poetry](https://python-poetry.org/) for packaging. Although o
 
 - To make VS Code use Poetry's virtual environment, type `poetry env info`, copy virtual environment executable path, press F1 and type `Python: Select Interpreter` > `Enter interpreter path...` > paste path and press `<ENTER>`.
 - To install all dependencies and the application, type `poetry install`.
-- To add/remove a dependency, type `poetry add`/`poetry remove`.
+- To add/remove a dependency, type `poetry add <dep>`/`poetry remove <dep>`.
 - To execute a command from within virtual environment shell, type `poetry run <cmd>`.
 - To enter a shell session within the Poetry virtual environment, type `poetry shell`.
 
@@ -18,3 +18,8 @@ Having PostgreSQL running on port 5432, do `poetry run pytest` (or, if on port x
 
 To get a similar instance as with GitHub Actions workflow:<br>
 `docker run --rm -P -p 127.0.0.1:5432:5432 --name pg -e POSTGRES_PASSWORD=postgres -d postgres:14.5-alpine`
+
+### Building documents
+
+1. If `docs/api` is not up-to-date or doesn't exist, run:<br>`poetry run sphinx-apidoc -f -o docs/api src/pg4n '*/test_*'`
+2. To generate the documentation:<br>`poetry run sphinx-build -b html docs docs/build`
