@@ -4,6 +4,10 @@
 
 ## Notes for developers
 
+### Imports
+
+You must run the program as a module, e.g., `python -m src.pg4n.main`, so that the imports work.
+
 ### Poetry
 
 This project uses [Poetry](https://python-poetry.org/) for packaging. Although one should refer to [Poetry docs](https://python-poetry.org/docs/) for a thorough introduction, here's a short summary of the intended workflow with Poetry:

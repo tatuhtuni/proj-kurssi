@@ -5,7 +5,7 @@ from os import getenv
 from pytest_postgresql import factories
 from psycopg import Connection
 
-from pg4n import qepparser
+from .. import qepparser
 
 
 def load_database(**kwargs):

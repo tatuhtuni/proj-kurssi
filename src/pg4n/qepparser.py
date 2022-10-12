@@ -2,6 +2,8 @@ from typing import Callable, Iterable, List, TypedDict
 import psycopg
 from psycopg import Connection
 
+from . import util  # used to test relative imports
+
 
 # TODO: break into variants discriminated by Node Type
 # right now, the interface isn't safe to use because it's not clear what fields
