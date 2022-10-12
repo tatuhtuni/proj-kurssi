@@ -16,7 +16,7 @@ def load_database(**kwargs):
         drop table if exists comments;
         drop table if exists users;
         drop table if exists stories;
-        
+
         -- demonstrates relational data
         create table stories (id serial primary key, name varchar);
         create table users (id serial primary key, name varchar);
@@ -25,7 +25,7 @@ def load_database(**kwargs):
             story_id integer references stories(id) on delete cascade,
             user_id integer references users(id) on delete cascade,
             comment varchar);
-            
+
         -- populate with sample data
         insert into stories (name) values ('story1');
         insert into stories (name) values ('story2');

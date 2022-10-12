@@ -107,7 +107,7 @@ class QEPAnalysis:
 class QEPParser:
     """Performs analyses on given queries, returning resultant QEPAnalysis."""
 
-    def __init__(self, *args, conn=None,  **kwargs):
+    def __init__(self, *args, conn=None, **kwargs):
         self._ref = not not conn
         self._conn: Connection = conn or psycopg.connect(*args, **kwargs)
 

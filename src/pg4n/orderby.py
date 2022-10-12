@@ -12,8 +12,10 @@ def has_subquery_order_by(sql: sqlglot.exp.Expression, qep: str) -> bool:
     """
 
     # Gets all the non-root select statements
-    subqueries = \
-        filter(lambda x: x.parent != None, sql.find_all(sqlglot.exp.Select))
+    subqueries = filter(
+        lambda x: x.parent is not None,
+        sql.find_all(
+            sqlglot.exp.Select))
 
     return any([subquery.find(sqlglot.exp.Order) for subquery in subqueries])
 

@@ -96,7 +96,7 @@ class PsqlParser:
         try:
             error_res = match_query_error.parse_string(psql)
         except ParseException as e:
-            if self.debug: 
+            if self.debug:
                 print(e.explain())
 
         if stmt_res:
