@@ -58,9 +58,9 @@ jobs:
           poetry run sphinx-apidoc -q -f -o docs/api src/pg4n '*/test_*' && \
           poetry run sphinx-build -q -b html docs docs/build && \
           touch docs/build/.nojekyll
-        # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feat/add-docs'
       - uses: JamesIves/github-pages-deploy-action@v4
-        # if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/feat/add-docs'
         with:
           folder: docs/build
           git-config-name: github-actions
