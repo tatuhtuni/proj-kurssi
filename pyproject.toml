@@ -30,3 +30,10 @@ sphinx-rtd-theme = "^1.0.0"
 
 [tool.poetry.group.dev.dependencies]
 autopep8 = "^1.7.0"
+
+# TODO: generate appropriately scoped access token so a bot can comment lint results
+# [tool.poetry.group.ci.dependencies]
+# mypy = "^0.982"
+# pylint = "^2.15.4"
+# black = "^22.10.0"
+# isort = "^5.10.1"

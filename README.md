@@ -31,3 +31,18 @@ To get a similar instance as with GitHub Actions workflow:<br>
 2. To generate the documentation:<br>`poetry run sphinx-build -b html docs docs/build`
 
 Note that the GitHub Pages site is only updated on pushes to `main` branch.
+
+<!-- TODO: generate appropriately scoped access token so a bot can comment lint results
+### Linting
+
+For linting, you need the CI tools: `poetry install -with ci`.
+
+Running all linters:
+```
+poetry run '
+mypy src --show-error-codes --show-error-context --pretty &&
+black src --check &&
+isort "src"/**/*.py -m 3 --trailing-comma -c &&
+pylint src'
+```
+-->
