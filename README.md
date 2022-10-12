@@ -14,7 +14,7 @@ This project uses [Poetry](https://python-poetry.org/) for packaging. Although o
 
 ### Running tests
 
-You need to have PostgreSQL running on port 5432 (or, if on x, just do `PGPORT=x poetry run pytest`).
+Having PostgreSQL running on port 5432, do `poetry run pytest` (or, if on port x, just do `PGPORT=x poetry run pytest`).
 
-For example, to get a similar instance as with GitHub Actions workflow:
+To get a similar instance as with GitHub Actions workflow:<br>
 `docker run --rm -P -p 127.0.0.1:5432:5432 --name pg -e POSTGRES_PASSWORD=postgres -d postgres:14.5-alpine`

@@ -41,8 +41,10 @@ def load_database(**kwargs):
 
 postgresql_in_docker = factories.postgresql_noproc(
     load=[load_database],
-    user=getenv("POSTGRES_USER", "postgres"),
-    password=getenv("POSTGRES_PASSWORD", "postgres"))
+    host=getenv("PGHOST", "127.0.0.1"),
+    port=getenv("PGPORT", 5432),
+    user=getenv("PGUSER", "postgres"),
+    password=getenv("PGPASSWORD", "postgres"))
 postgresql = factories.postgresql("postgresql_in_docker")
 
 
