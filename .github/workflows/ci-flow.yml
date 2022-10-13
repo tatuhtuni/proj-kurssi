@@ -65,11 +65,10 @@ jobs:
           poetry run sphinx-apidoc -q -f -o docs/api src/pg4n '*/test_*' && \
           poetry run sphinx-build -q -b html docs docs/build && \
           touch docs/build/.nojekyll
-        # if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main'
         
-      # TODO: generate appropriately scoped access token so a bot can push to Project-C-SQL.github.io
       - uses: JamesIves/github-pages-deploy-action@v4
-        # if: github.ref == 'refs/heads/main'
+        if: github.ref == 'refs/heads/main'
         with:
           token: ${{ secrets.BOT_SECRET }}
           repository-name: Project-C-SQL/Project-C-SQL.github.io

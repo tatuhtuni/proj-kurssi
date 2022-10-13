@@ -1,6 +1,6 @@
 # postgresql-for-novices
 
-[Documentation](https://project-c-sql.github.io/postgresql-for-novices/)
+[Documentation](https://project-c-sql.github.io/)
 
 ## Notes for developers
 
