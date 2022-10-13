@@ -34,8 +34,12 @@ You may need to provide environment variables that match your config:
  
 For example, if PostgreSQL is on port 5433, just do `PGPORT=5433 poetry run pytest` (Bash syntax).
 
+#### Using docker
+
 To get a similar PostgreSQL instance as with GitHub Actions workflow:<br>
 `docker run --rm -P -p 127.0.0.1:5432:5432 --name pg -e POSTGRES_PASSWORD=postgres -d postgres:14.5-alpine`
+
+You'll need to tell pytest the password: `PGPASSWORD=postgres poetry run pytest`.
 
 ### Building documents
 
