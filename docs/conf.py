@@ -16,7 +16,7 @@ source_suffix = {
     '.md': 'markdown',
 }
 
-templates_path = ['_templates']
+templates_path = ['templates']
 exclude_patterns = ['build', 'Thumbs.db', '.DS_Store']
 
 language = 'en'
@@ -29,3 +29,5 @@ always_document_param_types  = False
 typehints_document_rtype = True
 typehints_use_rtype = False
 typehints_fully_qualified = False
+
+myst_heading_anchors = 2
