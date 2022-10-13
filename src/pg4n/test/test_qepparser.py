@@ -1,22 +1,22 @@
 import pytest
-import psycopg2
+import psycopg
 
 from os import getenv
 from pytest_postgresql import factories
-from psycopg2.extensions import connection
+from psycopg import Connection
 
-import qepparser
+from .. import qepparser
 
 
 def load_database(**kwargs):
-    conn: connection = psycopg2.connect(**kwargs)
+    conn: Connection = psycopg.connect(**kwargs)
     with conn.cursor() as cur:
         cur.execute("""
         -- for copy-and-pasting
         drop table if exists comments;
         drop table if exists users;
         drop table if exists stories;
-        
+
         -- demonstrates relational data
         create table stories (id serial primary key, name varchar);
         create table users (id serial primary key, name varchar);
@@ -25,7 +25,7 @@ def load_database(**kwargs):
             story_id integer references stories(id) on delete cascade,
             user_id integer references users(id) on delete cascade,
             comment varchar);
-            
+
         -- populate with sample data
         insert into stories (name) values ('story1');
         insert into stories (name) values ('story2');
@@ -41,13 +41,15 @@ def load_database(**kwargs):
 
 postgresql_in_docker = factories.postgresql_noproc(
     load=[load_database],
-    user=getenv("POSTGRES_USER", "postgres"),
-    password=getenv("POSTGRES_PASSWORD", "postgres"))
+    host=getenv("PGHOST", "127.0.0.1"),
+    port=getenv("PGPORT", 5432),
+    user=getenv("PGUSER", "postgres"),
+    password=getenv("PGPASSWORD", "postgres"))
 postgresql = factories.postgresql("postgresql_in_docker")
 
 
 @pytest.fixture
-def parser(postgresql: connection):
+def parser(postgresql: Connection):
     return qepparser.QEPParser(conn=postgresql)
 
 

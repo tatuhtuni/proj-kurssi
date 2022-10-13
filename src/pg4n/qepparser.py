@@ -1,6 +1,8 @@
 from typing import Callable, Iterable, List, TypedDict
-import psycopg2
-from psycopg2.extensions import connection
+import psycopg
+from psycopg import Connection
+
+from . import util  # used to test relative imports
 
 
 # TODO: break into variants discriminated by Node Type
@@ -107,9 +109,9 @@ class QEPAnalysis:
 class QEPParser:
     """Performs analyses on given queries, returning resultant QEPAnalysis."""
 
-    def __init__(self, *args, conn=None,  **kwargs):
+    def __init__(self, *args, conn=None, **kwargs):
         self._ref = not not conn
-        self._conn: connection = conn or psycopg2.connect(*args, **kwargs)
+        self._conn: Connection = conn or psycopg.connect(*args, **kwargs)
 
     def __del__(self):
         if not self._ref:

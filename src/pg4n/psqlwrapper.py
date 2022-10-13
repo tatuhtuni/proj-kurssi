@@ -4,7 +4,7 @@ from typing import Callable, List, TextIO
 from functools import reduce
 import pexpect
 
-from psqlparser import PsqlParser
+from .psqlparser import PsqlParser
 
 # ANSI escape codes (\x1b[) used by psql:
 # K clear part of the line
