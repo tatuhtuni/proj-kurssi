@@ -71,6 +71,8 @@ jobs:
       - uses: JamesIves/github-pages-deploy-action@v4
         if: github.ref == 'refs/heads/main'
         with:
+          token: ${{ secrets.BOT_SECRET }}
+          repository-name: Project-C-SQL/Project-C-SQL.github.io
           folder: docs/build
           git-config-name: github-actions
           git-config-email: <>
