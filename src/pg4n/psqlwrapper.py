@@ -5,6 +5,7 @@ from functools import reduce
 import pexpect
 
 from .psqlparser import PsqlParser
+from .vt100decode import Vt100Decode
 
 # ANSI escape codes (\x1b[) used by psql:
 # K clear part of the line
@@ -19,10 +20,12 @@ from .psqlparser import PsqlParser
 
 class PsqlWrapper:
     """Handles terminal interfacing with psql, using the parameter parser \
-    to pick up relevant SQL statements for the hook function."""
+    to pick up relevant SQL statements for the hook function.
+
+    Only one (static) class instance is intended for use in program.
+    """
 
     debug: bool = False
-    fout: TextIO
 
     input_log: bytes = b''
     output_log: bytes = b''
@@ -41,9 +44,6 @@ class PsqlWrapper:
                           encoding="utf-8",
                           dimensions=(48, 160))
 
-        if self.debug:
-            self.fout = open('wrapper.log', 'w')
-
         c.interact(input_filter=self.ifilter,
                    output_filter=self.ofilter)
 
@@ -58,16 +58,11 @@ class PsqlWrapper:
         with it accordingly."""
         new_output: bytes = self.check_and_act_on_repl_output(output,
                                                               self.output_log)
-
         if new_output != b'':
-            self.output_log = b''
-            if self.debug:
-                self.fout.write(str(new_output) + '\n')
+            self.output_log = b''  # redundant, check-function above did this
             return new_output
         else:
             self.output_log = self.output_log + output
-            if self.debug:
-                self.fout.write(str(output) + '\n')
             return output
 
     def check_and_act_on_repl_output(self, latest_output: bytes,
@@ -81,25 +76,27 @@ class PsqlWrapper:
         before the new prompt.
         psql_log is only needed for analysis.
         latest_output is what's being changed and returned in new form.
+        decoded_latest is latest_output stripped from control codes. This \
+        is for optimization reasons to avoid multiple decodings.
         """
-        there_is_new_prompt: bool = len(self.parser.parse_for_new_prompt(
-            bytes.decode(latest_output))) > 0
+
+        there_is_new_prompt: bool = len(
+            self.parser.parse_for_new_prompt(bytes.decode(latest_output))) > 0
 
         if there_is_new_prompt:
-            # BUG: control codes are not handled. #27
+            decoded_psql: str = \
+                bytes.decode(Vt100Decode(psql_log + latest_output).get())
+            self.output_log = b''  # new prompt means cache can be emptied
+
             parsed_psql_stmt: List[str] = \
-                self.parser.parse_first_found_stmt(
-                    bytes.decode(psql_log + latest_output))
+                self.parser.parse_first_found_stmt(decoded_psql)
 
             if parsed_psql_stmt:
-                sql_stmt: str = reduce(lambda x, y: x + y, parsed_psql_stmt)
-
-                if self.debug:
-                    self.fout.write(sql_stmt + '\n')
-
-                helpful_message: str = \
-                    self.analyze(sql_stmt)
-
+                # concatenate parsed statement by folding list
+                sql_stmt: str = \
+                    reduce(lambda x, y: x + y, parsed_psql_stmt)
+                # feed it to hook function
+                helpful_message: str = self.analyze(sql_stmt)
                 return self.replace_prompt(helpful_message,
                                            latest_output)
 

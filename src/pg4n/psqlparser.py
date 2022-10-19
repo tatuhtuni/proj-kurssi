@@ -62,14 +62,17 @@ class PsqlParser:
         """
         results: List[str] = []
         prompt_res: ParseResults = None
+        match_trash_and_then_prompt: ParserElement = \
+            ... + self.match_prompt
+        
         try:
-            prompt_res = self.match_prompt.parse_string(psql)
+            prompt_res = match_trash_and_then_prompt.parse_string(psql)
         except ParseException as e:
             if self.debug:
                 print(e.explain())
 
         if prompt_res:
-            results = prompt_res.as_list()
+            results = prompt_res.as_list()[1:]
         return results
 
     def parse_first_found_stmt(self, psql: str) -> List[str]:
