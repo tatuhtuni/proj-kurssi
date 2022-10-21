@@ -79,7 +79,6 @@ class PsqlWrapper:
         decoded_latest is latest_output stripped from control codes. This \
         is for optimization reasons to avoid multiple decodings.
         """
-
         there_is_new_prompt: bool = len(
             self.parser.parse_for_new_prompt(bytes.decode(latest_output))) > 0
 

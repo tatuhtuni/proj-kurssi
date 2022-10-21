@@ -12,9 +12,7 @@ ParserElement.enablePackrat(None)  # memoization optimization
 class PsqlParser:
     """Parses psql output for syntactic analysis."""
 
-    # class debug
     debug: bool = False
-    fout: TextIO
 
     prompt_chars: str = identbodychars
     control_codes: str = '\x1b' + '\x08'
@@ -51,8 +49,7 @@ class PsqlParser:
 
     def __init__(self):
         """Plain constructor for PsqlParser."""
-        if self.debug:
-            self.fout = open('psqlparser.log', 'w')
+        pass
 
     def parse_for_new_prompt(self, psql: str) -> List[str]:
         """Parse for an empty prompt, usually to detect when a query \
@@ -62,9 +59,10 @@ class PsqlParser:
         """
         results: List[str] = []
         prompt_res: ParseResults = None
+        # TODO optimization: matching trash is expensive
         match_trash_and_then_prompt: ParserElement = \
             ... + self.match_prompt
-        
+
         try:
             prompt_res = match_trash_and_then_prompt.parse_string(psql)
         except ParseException as e:
