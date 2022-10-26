@@ -54,15 +54,14 @@ jobs:
           PGUSER: postgres
           PGPASSWORD: postgres
         
-      #  TODO: generate appropriately scoped access token so a bot can comment lint results
-      # - run: |
-      #     poetry run mypy src --show-error-codes --show-error-context --pretty && \
-      #     poetry run black src --check && \
-      #     poetry run isort "src"/**/*.py -m 3 --trailing-comma -c && \
-      #     poetry run pylint src --exit-zero
+      - run: |
+          poetry run -- bash -c 'echo a && mypy src --show-error-codes --show-error-context --no-error-summary;
+          echo b && black src --check;
+          echo c && isort "src"/**/*.py -m 3 --trailing-comma -c;
+          echo d && pylint src --exit-zero'
 
       - run: |
-          poetry run sphinx-apidoc -q -f -o docs/api src/pg4n '*/test_*' && \
+          poetry run sphinx-apidoc -q -f -o docs/api src/pg4n '*/test*' && \
           poetry run sphinx-build -q -b html docs docs/build && \
           touch docs/build/.nojekyll
         if: github.ref == 'refs/heads/main'

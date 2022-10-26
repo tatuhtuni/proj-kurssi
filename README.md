@@ -1,4 +1,4 @@
-# postgresql-for-novices
+# PostgreSQL for novices
 
 [Documentation](https://project-c-sql.github.io/)
 
@@ -43,7 +43,7 @@ You'll need to tell pytest the password: `PGPASSWORD=postgres poetry run pytest`
 
 ### Building documents
 
-1. If `docs/api` is not up-to-date or doesn't exist, run:<br>`poetry run sphinx-apidoc -f -o docs/api src/pg4n '*/test_*'`
+1. If `docs/api` is not up-to-date or doesn't exist, run:<br>`poetry run sphinx-apidoc -f -o docs/api src/pg4n '*/test*'`
 2. To generate the documentation:<br>`poetry run sphinx-build -b html docs docs/build`
 
 Note that the GitHub Pages site is only updated on pushes to `main` branch.
