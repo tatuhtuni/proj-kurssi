@@ -8,12 +8,13 @@ import sqlglot.expressions as exp
 
 from .. import sqlparser
 
+
 def load_database(**kwargs):
     conn: Connection = psycopg.connect(**kwargs)
 
     with conn.cursor() as cur:
         cur.execute(
-        """
+            """
         DROP TABLE IF EXISTS e31_test_table_orders;
         DROP TABLE IF EXISTS e31_test_table_customers;
 
@@ -539,6 +540,7 @@ def load_database(**kwargs):
         insert into e31_test_table_orders (order_id, order_total_eur, customer_id) values (250, 367.56, 214);""")
         conn.commit()
 
+
 factory = factories.postgresql_proc(
     load=[load_database],
 )
@@ -548,6 +550,7 @@ postgresql = factories.postgresql("factory")
 @pytest.fixture
 def sql_parser(postgresql: Connection):
     return sqlparser.SqlParser(db_connection=postgresql)
+
 
 IMPOSSIBLE_STATEMENT = \
     """
@@ -575,7 +578,6 @@ def test_parse_one(sql_parser: sqlparser.SqlParser):
         parsed = parser.parse_one(statement)
     except Exception as e:
         assert False, f"exception: {e}"
-
 
 
 def test_parse(sql_parser: sqlparser.SqlParser):
@@ -669,7 +671,6 @@ def test_get_query_columns(sql_parser: sqlparser.SqlParser):
     parser = sql_parser
 
     expected_total_columns = 8
-
 
     # Nonsense query that just has different kinds of table names in different
     # contexts.

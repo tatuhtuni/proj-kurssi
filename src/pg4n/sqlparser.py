@@ -254,7 +254,7 @@ WHERE
             else:
                 # TODO: proper error handling
                 print(f"unable to convert from internal type '{type_name}' to declared type",
-                    file=sys.stderr)
+                      file=sys.stderr)
                 exit(1)
 
         return converted_types
