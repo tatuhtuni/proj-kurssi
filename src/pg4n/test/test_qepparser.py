@@ -39,88 +39,88 @@ def load_database(**kwargs):
         conn.commit()
 
 
-# postgresql_in_docker = factories.postgresql_noproc(
-#     load=[load_database],
-#     host=getenv("PGHOST", "127.0.0.1"),
-#     port=getenv("PGPORT", 5432),
-#     user=getenv("PGUSER", "postgres"),
-#     password=getenv("PGPASSWORD", "postgres"))
-# postgresql = factories.postgresql("postgresql_in_docker")
+postgresql_in_docker = factories.postgresql_noproc(
+    load=[load_database],
+    host=getenv("PGHOST", "127.0.0.1"),
+    port=getenv("PGPORT", 5432),
+    user=getenv("PGUSER", "postgres"),
+    password=getenv("PGPASSWORD", "postgres"))
+postgresql = factories.postgresql("postgresql_in_docker")
 
 
-# @pytest.fixture
-# def parser(postgresql: Connection):
-#     return qepparser.QEPParser(conn=postgresql)
+@pytest.fixture
+def parser(postgresql: Connection):
+    return qepparser.QEPParser(conn=postgresql)
 
 
-# def test_qep_structure(parser: qepparser.QEPParser):
-#     """Test that the QEP structure is as expected."""
+def test_qep_structure(parser: qepparser.QEPParser):
+    """Test that the QEP structure is as expected."""
 
-#     qep = parser("select * from stories")
-#     assert qep.plan["Node Type"] == "Seq Scan"
-#     assert qep.plan["Relation Name"] == "stories"
-#     assert qep.plan["Alias"] == "stories"
-#     assert qep.plan["Actual Rows"] == 2
+    qep = parser("select * from stories")
+    assert qep.plan["Node Type"] == "Seq Scan"
+    assert qep.plan["Relation Name"] == "stories"
+    assert qep.plan["Alias"] == "stories"
+    assert qep.plan["Actual Rows"] == 2
 
-#     qep = parser("select * from users")
-#     assert qep.plan["Node Type"] == "Seq Scan"
-#     assert qep.plan["Relation Name"] == "users"
-#     assert qep.plan["Alias"] == "users"
-#     assert qep.plan["Actual Rows"] == 2
+    qep = parser("select * from users")
+    assert qep.plan["Node Type"] == "Seq Scan"
+    assert qep.plan["Relation Name"] == "users"
+    assert qep.plan["Alias"] == "users"
+    assert qep.plan["Actual Rows"] == 2
 
-#     qep = parser("select * from comments")
-#     assert qep.plan["Node Type"] == "Seq Scan"
-#     assert qep.plan["Relation Name"] == "comments"
-#     assert qep.plan["Alias"] == "comments"
-#     assert qep.plan["Actual Rows"] == 4
+    qep = parser("select * from comments")
+    assert qep.plan["Node Type"] == "Seq Scan"
+    assert qep.plan["Relation Name"] == "comments"
+    assert qep.plan["Alias"] == "comments"
+    assert qep.plan["Actual Rows"] == 4
 
-#     qep = parser("select * from stories where id = 1")
-#     assert qep.plan["Node Type"] == "Index Scan"
-#     assert qep.plan["Relation Name"] == "stories"
-#     assert qep.plan["Alias"] == "stories"
-#     assert qep.plan["Actual Rows"] == 1
+    qep = parser("select * from stories where id = 1")
+    assert qep.plan["Node Type"] == "Index Scan"
+    assert qep.plan["Relation Name"] == "stories"
+    assert qep.plan["Alias"] == "stories"
+    assert qep.plan["Actual Rows"] == 1
 
-#     qep = parser("select * from users where id = 1")
-#     assert qep.plan["Node Type"] == "Index Scan"
-#     assert qep.plan["Relation Name"] == "users"
-#     assert qep.plan["Alias"] == "users"
-#     assert qep.plan["Actual Rows"] == 1
+    qep = parser("select * from users where id = 1")
+    assert qep.plan["Node Type"] == "Index Scan"
+    assert qep.plan["Relation Name"] == "users"
+    assert qep.plan["Alias"] == "users"
+    assert qep.plan["Actual Rows"] == 1
 
-#     qep = parser("select * from comments where id = 1")
-#     assert qep.plan["Node Type"] == "Index Scan"
-#     assert qep.plan["Relation Name"] == "comments"
-#     assert qep.plan["Alias"] == "comments"
-#     assert qep.plan["Actual Rows"] == 1
+    qep = parser("select * from comments where id = 1")
+    assert qep.plan["Node Type"] == "Index Scan"
+    assert qep.plan["Relation Name"] == "comments"
+    assert qep.plan["Alias"] == "comments"
+    assert qep.plan["Actual Rows"] == 1
 
-#     qep = parser("select * from stories where id = 1 and id = 2")
-#     assert qep.plan["Node Type"] == "Result"
-#     assert qep.root[0].plan["Node Type"] == "Index Scan"
-#     assert qep.root[0].plan["Relation Name"] == "stories"
-#     assert qep.root[0].plan["Alias"] == "stories"
-#     assert qep.root[0].plan["Actual Rows"] == 0
+    qep = parser("select * from stories where id = 1 and id = 2")
+    assert qep.plan["Node Type"] == "Result"
+    assert qep.root[0].plan["Node Type"] == "Index Scan"
+    assert qep.root[0].plan["Relation Name"] == "stories"
+    assert qep.root[0].plan["Alias"] == "stories"
+    assert qep.root[0].plan["Actual Rows"] == 0
 
-#     qep = parser("select * from users where id = 1 and id = 2")
-#     assert qep.plan["Node Type"] == "Result"
-#     assert qep.root[0].plan["Node Type"] == "Index Scan"
-#     assert qep.root[0].plan["Relation Name"] == "users"
-#     assert qep.root[0].plan["Alias"] == "users"
-#     assert qep.root[0].plan["Actual Rows"] == 0
+    qep = parser("select * from users where id = 1 and id = 2")
+    assert qep.plan["Node Type"] == "Result"
+    assert qep.root[0].plan["Node Type"] == "Index Scan"
+    assert qep.root[0].plan["Relation Name"] == "users"
+    assert qep.root[0].plan["Alias"] == "users"
+    assert qep.root[0].plan["Actual Rows"] == 0
 
-#     qep = parser("select * from comments where id = 1 and id = 2")
-#     assert qep.plan["Node Type"] == "Result"
-#     assert qep.root[0].plan["Node Type"] == "Index Scan"
-#     assert qep.root[0].plan["Relation Name"] == "comments"
-#     assert qep.root[0].plan["Alias"] == "comments"
-#     assert qep.root[0].plan["Actual Rows"] == 0
+    qep = parser("select * from comments where id = 1 and id = 2")
+    assert qep.plan["Node Type"] == "Result"
+    assert qep.root[0].plan["Node Type"] == "Index Scan"
+    assert qep.root[0].plan["Relation Name"] == "comments"
+    assert qep.root[0].plan["Alias"] == "comments"
+    assert qep.root[0].plan["Actual Rows"] == 0
 
-#     qep = parser("select * from stories where id = 1 or id = 2")
-#     assert qep.plan["Node Type"] == "Bitmap Heap Scan"
-#     assert qep.plan["Relation Name"] == "stories"
-#     assert qep.plan["Alias"] == "stories"
-#     assert qep.plan["Actual Rows"] == 2
+    qep = parser("select * from stories where id = 1 or id = 2")
+    assert qep.plan["Node Type"] == "Bitmap Heap Scan"
+    assert qep.plan["Relation Name"] == "stories"
+    assert qep.plan["Alias"] == "stories"
+    assert qep.plan["Actual Rows"] == 2
 
-#     qep = parser("select * from users where id = 1 or id = 2")
-#     assert qep.plan["Node Type"] == "Bitmap Heap Scan"
-#     assert qep.plan["Relation Name"] == "users"
-#     assert qep.plan["Alias"] == "users"
-#     assert qep.plan["Actual Rows"] == 2
+    qep = parser("select * from users where id = 1 or id = 2")
+    assert qep.plan["Node Type"] == "Bitmap Heap Scan"
+    assert qep.plan["Relation Name"] == "users"
+    assert qep.plan["Alias"] == "users"
+    assert qep.plan["Actual Rows"] == 2
