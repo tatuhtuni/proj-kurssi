@@ -1,5 +1,4 @@
 import sys
-import subprocess
 import re
 from dataclasses import dataclass
 from typing import Optional
@@ -7,6 +6,7 @@ from typing import Optional
 import sqlglot
 import sqlglot.expressions as exp
 from sqlglot.dialects.postgres import Postgres
+import psycopg
 
 
 @dataclass(frozen=True)
@@ -27,10 +27,9 @@ class SqlParser:
     # Patches the postgres dialect to recognize bpchar
     Postgres.Tokenizer.KEYWORDS["BPCHAR"] = sqlglot.TokenType.CHAR
 
-    # TODO: Refactor db_name to instead use database connection with e.g. psycopg
-    def __init__(self, db_name: str):
+    def __init__(self, db_connection: psycopg.Connection):
         self.dialect = "postgres"
-        self.db_name = db_name
+        self.db_connection = db_connection
 
     def parse(self, sql: str) -> list[sqlglot.exp.Expression]:
         """
@@ -75,16 +74,13 @@ class SqlParser:
         """
         table_names = []
         tables = parsed_sql.find_all(exp.Table)
+        # table.this.this: first .this gets the exp.Identifier of the table and
+        # second .this gets the name of the identifier.
+        table_names = [table.this.this for table in tables]
 
-        for table in tables:
-            # Any dollar-prefixed tablename is an temporary table name in some
-            # nested SQL-construction.
-            #
-            # table.this.this: first .this gets the exp.Identifier of the table and
-            # second .this gets the name of the identifier.
-            table_names.append(table.this.this.lstrip('$'))
+        unique_table_names = list(set(table_names))
 
-        return list(set(table_names))
+        return unique_table_names
 
     def get_query_columns(self, parsed_sql: exp.Expression) -> list[Column]:
         """
@@ -147,9 +143,6 @@ class SqlParser:
 
         return columns
 
-    # TODO: Refactor subprocess.check_output() to instead do queries with
-    # self.db_connection ... (like in tests/test_qepparser.py)
-
     def _get_column_names(self, table_name: str) -> list[str]:
         """
         Requires that  'table_name' exists.
@@ -160,20 +153,18 @@ class SqlParser:
             "SELECT column_name " \
             "FROM information_schema.columns " \
             f"WHERE table_name = '{table_name}';"
-        columns = []
-        # -X supresses user configuration file which could change the default output
-        # format we rely on when parsing the output.
-        raw_output = subprocess.check_output(
-            ["psql", "-A", "-t", "-X", "-d", self.db_name, "-c", statement])
-        output_lines = bytes.decode(raw_output).rstrip('\n').split('\n')
 
-        print(f"output_lines: {output_lines}")
+        column_names = []
+        with self.db_connection.cursor() as cursor:
+            cursor.execute(statement)
+            column_names = cursor.fetchall()
+            self.db_connection.rollback()
 
-        return output_lines
+        # transforms 1-element tuples to just list of elements
+        column_names = [x[0] for x in column_names]
+        print(f"column_names: {column_names}")
 
-
-    # TODO: Refactor subprocess.check_output() to instead do queries with
-    # self.db_connection ... (like in tests/test_qepparser.py)
+        return column_names
 
     def _get_column_types(self, table_name: str, columns: list[str]) \
             -> list[PostgreSQLDataType]:
@@ -202,12 +193,17 @@ WHERE
         for col in columns[:-1]:
             in_condition += f"'{col}', "
         in_condition += f"'{columns[-1]}')\n    );"
-
         column_type_statement = column_type_statement_prefix + in_condition
-        output = subprocess.check_output(["psql", "-A", "-t", "-X", "-d",
-                                          self.db_name, "-c", column_type_statement])
 
-        type_names = bytes.decode(output).rstrip('\n').split('\n')
+        type_names = []
+        with self.db_connection.cursor() as cursor:
+            cursor.execute(column_type_statement)
+            type_names = cursor.fetchall()
+            self.db_connection.rollback()
+
+        # transforms 1-element tuples to just list of elements
+        type_names = [x[0] for x in type_names]
+        print(f"type_names: {type_names}")
 
         parseable_type_names = self._convert_from_internal_types(type_names)
 
@@ -262,3 +258,11 @@ WHERE
                 exit(1)
 
         return converted_types
+
+    def _run_sql_query(self, sql_query: str) -> list[str]:
+        with self.db_connection.cursor() as cursor:
+            cursor.execute(sql_query)
+            res = cur.fetchall()
+            self.db_connection.rollback()
+
+        return res
