@@ -4,6 +4,9 @@ Inspired by https://github.com/noahspurrier/pexpect/blob/master/ANSI.py
 
 TODO:
 detect ^C
+extend psqlwrapper to always include text from all the way from start of the line (meaning "db=> ") so that \r + cursor moves can be calculated right
+
+supporting ctrl-R seems to have a ton of edge cases, and not even pexpect handles it gracefully.
 
 Executes following control codes:
 '\x08' Backspace
@@ -20,6 +23,7 @@ characters back." -> Delete, but actually requires no action because readline \
  adds \x08? -> Discard
 '\x1b[?-anything (only ?2004, ?1049 (results): consistently 4 numbers \
 in psql output)
+'\x1b[A DoUp psql prompt technically allows for multiline editing, but this is not supported currently
 
 these are seemingly only in query results (discard all):
 '\x1b[?1l' low cursor
@@ -29,8 +33,7 @@ these are seemingly only in query results (discard all):
 
 default case for all remaining escapes: discard
 """
-from typing import Callable, List, TextIO
-from functools import partial, reduce
+from functools import partial
 
 
 class Vt100Decode:
@@ -50,8 +53,8 @@ class Vt100Decode:
         self.actions = []  # type hint: List[int, Callable[something]]
         self.stack = []  # type hint: List[Callable[something]]
         # encoded_bytes gives upper limit to bytestring length:
-        self.enc_length: int = len(encoded_bytes)  # save this for later use
-        self.dec: bytearray = bytearray(self.enc_length)
+        self.array_size: int = len(encoded_bytes)  # save this for later use
+        self.dec: bytearray = bytearray(self.array_size)
 
         # keep track of positions within bytearrays
         self.enc_pos: int = 0
@@ -61,11 +64,12 @@ class Vt100Decode:
         # simple escape code actions:
         self._add_action(8, self._DoBackspace)  # \x08
 #        self._add_action(27, self._DoEraseCode)  # \x1b
-        self._add_action(0, self._Stop)  # \0, means overflowing bytearray
+#        self._add_action(0, self._Stop)  # \0, means overflowing bytearray;
+#        except with current implementation \0 can be anywhere
         # _decode() has a default case (for text) that runs self._DoWrite
         
         # fill stack until all bytes have been gone through
-        while (self.enc_pos < self.enc_length and self.enc_pos >= 0):
+        while (self.enc_pos < self.array_size and self.enc_pos >= 0):
             self._decode()
 
         # execute generated action stack
@@ -73,7 +77,11 @@ class Vt100Decode:
 
     def get(self):
         """Get decoded bytestring."""
-        return bytes(self.dec)
+        x = bytes(self.dec).replace(b'\x00', b'')
+        print("enc:" + str(bytes(self.enc)) + "\r\n")
+        print("dec:" + str(x) + "\r\n")
+        print("dec_str: " + bytes.decode(x) + "\r\n")
+        return x
 
     def _decode(self):
         default_case: bool = True
@@ -93,7 +101,7 @@ class Vt100Decode:
             # no \n possible if at end of bytestring
             # but also means we can disregard \r
             self.enc_pos += 1  # we can move to next unread character
-            if self.enc_length == self.enc_pos:
+            if self.array_size == self.enc_pos:
                 pass
             elif self.enc[self.enc_pos] == 10:  # \n
                 pass
@@ -118,21 +126,29 @@ class Vt100Decode:
     def _DoBackspace(self):
         """Delete the character before current position in decoded string \
         and move back."""
-        del self.dec[self.dec_pos - 1]
         self.dec_pos -= 1
+        if self.dec[self.dec_pos] == 0:  # account for 0-cells
+            self._DoBackspace()
+        else:
+            del self.dec[self.dec_pos]
 
     def _DoCarriageReturn(self):
         """Move position to start of line."""
         # move until before \n or start of string
-        while self.dec[self.dec_pos - 1] != 10 \
-              and self.dec_pos >= 0:
+        while self.dec_pos > 0 \
+              and self.dec[self.dec_pos - 1] != 10:
             self.dec_pos -= 1
 
     def _DoEraseEndOfLine(self):
-        pass  # TODO
+        while self.dec_pos < len(self.dec) \
+              and self.dec[self.dec_pos] != 10:  # \n
+            del self.dec[self.dec_pos]
 
     def _DoForwardOne(self):
         self.dec_pos += 1
+        # 0-cells are an anomaly produced by bytearray, skip them:
+        if self.dec[self.dec_pos] == 0:
+            self._DoForwardOne()
 
     def _handle_x1b(self):
         """Discard control code and associated parameters."""
@@ -189,7 +205,7 @@ class Vt100Decode:
                              + str(bytes(char_2)))
 
     def _DoWrite(self, char: bytes):
-        self.dec[self.dec_pos] = char
+        self.dec[self.dec_pos:self.dec_pos] = bytearray(chr(char), "utf-8")
         self.dec_pos += 1
 
     def _executeStack(self):
@@ -197,4 +213,4 @@ class Vt100Decode:
             f()
 
     def _Stop(self):
-        self.pos = -1
+        self.enc_pos = -1
