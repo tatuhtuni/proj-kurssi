@@ -1,12 +1,13 @@
 """Parse psql output."""
 
-from typing import List, TextIO
-from pyparsing import CaselessLiteral, Char, Literal, MatchFirst, OneOrMore, \
-    ParseException, ParseResults, ParserElement, SkipTo, Word, \
+from typing import List
+from pyparsing import CaselessLiteral, Char, Literal, MatchFirst, \
+    ParseException, ParseResults, ParserElement, Word, \
     identbodychars
+from functools import reduce
 from string import printable
 
-ParserElement.enablePackrat(None)  # memoization optimization
+ParserElement.enablePackrat(None)  # Turn on memoization optimization
 
 
 class PsqlParser:
@@ -15,19 +16,30 @@ class PsqlParser:
     debug: bool = False
 
     prompt_chars: str = identbodychars
-    control_codes: str = '\x1b' + '\x08'
     stmt_end: str = ";"
     # Naively, SQL statement body can contain all printable characters
     # (incl. whitespace), apart from ';'
     stmt_chars: str = \
-        printable.translate(str.maketrans("", "", stmt_end)) + control_codes
+        printable.translate(str.maketrans("", "", stmt_end))
+
+    # rev means reversed, these are for performance reasons.
 
     # parser tokens:
     # superusers have =# prompt
     tok_prompt: ParserElement = \
-        Word(prompt_chars) + (CaselessLiteral("=>") | CaselessLiteral("=#"))
+        Char('\n') + Word(prompt_chars) + \
+        (CaselessLiteral("=>") | CaselessLiteral("=#"))
+    tok_rev_prompt: ParserElement = \
+        (CaselessLiteral(">=") | CaselessLiteral("#=")) + \
+        Word(prompt_chars) + Char('\n')
+
     tok_prompt_linebreak: ParserElement = \
-        CaselessLiteral("->") | CaselessLiteral("-#")
+        Char('\n') + Word(prompt_chars) + \
+        (CaselessLiteral("->") | CaselessLiteral("-#"))
+    tok_rev_prompt_linebreak: ParserElement = \
+        (CaselessLiteral(">-") | CaselessLiteral("#-")) + \
+        Word(prompt_chars) + Char('\n')
+
     tok_stmt_end: ParserElement = \
         Char(';')
 
@@ -35,9 +47,13 @@ class PsqlParser:
     match_prompt: ParserElement = \
         MatchFirst([tok_prompt])
     match_sql_stmt_start: ParserElement = \
-        CaselessLiteral("SELECT ")  # All interesting stmts are 'select'
+        CaselessLiteral("SELECT")  # All interesting stmts are 'select'
+    match_rev_sql_stmt_start: ParserElement = \
+        CaselessLiteral("TCELES")
     match_sql_stmt: ParserElement = \
         Word(stmt_chars)
+    match_whole_rev_sql_stmt: ParserElement = \
+        tok_stmt_end + ... + match_rev_sql_stmt_start
     match_sql_stmt_end: ParserElement = \
         tok_stmt_end
     match_error: ParserElement = \
@@ -47,62 +63,108 @@ class PsqlParser:
     parse_sql_stmt: ParserElement = \
         match_prompt + match_sql_stmt + match_sql_stmt_end
 
+    # magic strings related to solely to ctrl-R use are
+    # "\r\n\x1b[?2004l\r", "\r\n\r\r\n" and "\x08\r\n".
+    # For some reason 1st string's last \r is never matched? So it had
+    # to be left out
+    match_rev_magical_returns: ParserElement = \
+        Literal("\r\n\x1b[?2004l"[::-1]) \
+        | Literal("\r\n\r\r\n"[::-1]) \
+        | Literal("\x08\r\n"[::-1])
+
     def __init__(self):
         """Plain constructor for PsqlParser."""
         pass
 
     def parse_for_new_prompt(self, psql: str) -> List[str]:
-        """Parse for an empty prompt, usually to detect when a query \
+        """Parse for an empty prompt, to detect when a query \
         evaluation has ended.
 
+        Parameter must include terminal control codes.
         Returns an empty list if none found.
         """
+        # cheaper and easier to reverse & start from the end
+        psql_rev: str = psql[::-1]
         results: List[str] = []
         prompt_res: ParseResults = None
-        # TODO optimization: matching trash is expensive
-        match_trash_and_then_prompt: ParserElement = \
-            ... + self.match_prompt
+
+        # TODO: For some reason Literal(" >=") does not provide a match,
+        # but works fine without the whitespace..
+        match_prompt_end: ParserElement = \
+            Literal(">=") | Literal("#=")
 
         try:
-            prompt_res = match_trash_and_then_prompt.parse_string(psql)
+            prompt_res = match_prompt_end.parse_string(psql_rev)
         except ParseException as e:
             if self.debug:
-                print(e.explain())
+                f = open("psqlparser.log", "a")
+                f.write(str(e.explain()) + "\n")
+                f.close()
 
         if prompt_res:
-            results = prompt_res.as_list()[1:]
+            results = prompt_res.as_list()
+
         return results
 
-    def parse_first_found_stmt(self, psql: str) -> List[str]:
-        """Parse for the content between two prompts. Returns an empty \
-        list if there is no statement or there was an error.
+    def parse_for_magical_return(self, psql: str) -> List[str]:
+        """Parse for weird Return presses.
 
-        Expected to be deprecated when detecting multiple statements is
-        implemented.
+        Parameter must include terminal control codes.
+        Returns an empty list if no presses are found.
         """
-        match_stmt: ParserElement = \
-            ... + self.match_sql_stmt_start + self.match_sql_stmt + \
-            self.match_sql_stmt_end
-        match_query_error: ParserElement = \
-            SkipTo(self.match_error)
+        psql_rev: str = psql[::-1]
+
+        results: List[str] = []
+        magical_return_res: ParseResults = None
+
+        try:
+            magical_return_res = \
+                self.match_rev_magical_returns.parse_string(psql_rev)
+        except ParseException as e:
+            if self.debug:
+                f = open("psqlparser.log", "a")
+                f.write(str(e.explain()) + "\n")
+                f.close()
+
+        if magical_return_res:
+            results = magical_return_res.as_list()
+        return results
+
+    def parse_last_found_stmt(self, psql: str) -> str:
+        """Parse for last SQL query statement in a string.
+
+        Returns parsed SQL query as plain string.
+        """
+        # reverse given string, match reversed tokens, pick first match,
+        # then reverse the matched string.
+        psql_rev = psql[::-1]  # slicing is fastest operation for reversing
+
+        # BUG(?): Assumes only single statement query
+        # BUG: Will match until previous SELECT query, if newest is e.g INSERT
+        #      Fix it by matching rev_stmt_start also against rev_prompt
+        # TODO: strip "->"/"-#" from string to allow multiline queries
+        match_last_stmt: ParserElement = \
+            self.match_whole_rev_sql_stmt
 
         results: List[str] = []
         stmt_res: ParseResults = None
-        error_res: ParseResults = None
         try:
-            stmt_res = match_stmt.parse_string(psql)
+            stmt_res = match_last_stmt.parse_string(psql_rev)
         except ParseException as e:
             if self.debug:
-                print(e.explain())
-        try:
-            error_res = match_query_error.parse_string(psql)
-        except ParseException as e:
-            if self.debug:
-                print(e.explain())
+                f = open("psqlparser.log", "a")
+                f.write(str(e.explain()) + "\n")
+                f.close()
 
         if stmt_res:
             stmt_res_list = stmt_res.as_list()
-            results = [stmt_res_list[1], stmt_res_list[2], stmt_res_list[3]]
-        if error_res:
-            results = []
-        return results
+            length: int = len(stmt_res_list)
+            # TODO: instead of magic number 3 (per match statement length),
+            # derive 3 from list length or something
+            results = [stmt_res_list[length - 1],
+                       stmt_res_list[length - 2],
+                       stmt_res_list[length - 3]]  # reverse order
+
+        reversed_flattened_res: str = \
+            reduce(lambda x, y: x + y[::-1], results, "")
+        return reversed_flattened_res
