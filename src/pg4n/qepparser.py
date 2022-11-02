@@ -1,3 +1,4 @@
+from itertools import chain
 from typing import Callable, Iterable, List, TypedDict
 import psycopg
 from psycopg import Connection
@@ -73,9 +74,28 @@ class QEPNode:
         """A list of the node's children."""
         return self._node["Plans"]
 
-    def find(self, pred: Callable[[node], bool]) -> list[node]:
-        """Find nodes matching the predicate."""
+    def find(self, pred: Callable[[node], bool],
+             recursive=False) -> list[node]:
+        """Finds nodes matching the predicate.
+        
+        :param pred: a function that takes a node and returns True if it matches
+        :param recursive: if True, search recursively
+        
+        :returns: a list of matching nodes
+        """
+        if recursive:
+            return self.find(pred) + \
+                list(chain.from_iterable(x.find(pred, True) for x in iter(self)))
         return list(filter(pred, self._node["Plans"]))
+
+    def rfind(self, pred: Callable[[node], bool]) -> list[node]:
+        """Finds nodes matching the predicate, recursively.
+        
+        :param pred: a function that takes a node and returns True if it matches
+        
+        :returns: a list of matching nodes
+        """
+        return self.find(pred, recursive=True)
 
 
 class QEPAnalysis:
@@ -110,8 +130,12 @@ class QEPParser:
     """Performs analyses on given queries, returning resultant QEPAnalysis."""
 
     def __init__(self, *args, conn=None, **kwargs):
-        self._ref = not not conn
+        self._ref = bool(conn)
         self._conn: Connection = conn or psycopg.connect(*args, **kwargs)
+        # use constraint_exclusion to avoid unnecessary index scans
+        with self._conn.cursor() as cur:
+            cur.execute("set constraint_exclusion = on;")
+            self._conn.commit()
 
     def __del__(self):
         if not self._ref:
