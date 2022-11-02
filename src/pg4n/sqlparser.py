@@ -52,7 +52,23 @@ class SqlParser:
 
         return sqlglot.parse_one(sql, read=self.dialect)
 
-    def get_root_node(self, node: exp.Expression) -> exp.Expression:
+    def get_query_columns(self, parsed_sql: exp.Expression) -> list[Column]:
+        """
+        Gets all columns from all tables mentioned in parsed_sql.
+        """
+        columns = []
+
+        root = self.get_root_node(parsed_sql)
+        table_names = self.find_all_table_names(root)
+
+        for table_name in table_names:
+            table_columns = self._get_columns(table_name)
+            columns.extend(table_columns)
+
+        return columns
+
+    @staticmethod
+    def get_root_node(node: exp.Expression) -> exp.Expression:
         """
         Finds the root node (probably exp.Select) from node.
         """
@@ -65,7 +81,8 @@ class SqlParser:
             root_node = new_root
         return root_node
 
-    def find_all_table_names(self, parsed_sql: exp.Expression) -> list[str]:
+    @staticmethod
+    def find_all_table_names(parsed_sql: exp.Expression) -> list[str]:
         """
         Finds all unique table names in 'parsed_sql'.
         Any table name with an alias is listed without the alias
@@ -82,22 +99,8 @@ class SqlParser:
 
         return unique_table_names
 
-    def get_query_columns(self, parsed_sql: exp.Expression) -> list[Column]:
-        """
-        Gets all columns from all tables mentioned in parsed_sql.
-        """
-        columns = []
-
-        root = self.get_root_node(parsed_sql)
-        table_names = self.find_all_table_names(root)
-
-        for table_name in table_names:
-            table_columns = self._get_columns(table_name)
-            columns.extend(table_columns)
-
-        return columns
-
-    def get_column_name_from_column_expression(self, column_expression: exp.Column) -> str:
+    @staticmethod
+    def get_column_name_from_column_expression(column_expression: exp.Column) -> str:
         """
         Returns the column name of column expression ast node.
         """
@@ -105,7 +108,8 @@ class SqlParser:
 
         return column_expression.find(exp.Identifier).this
 
-    def find_where_predicates(self, root: exp.Expression) -> list[exp.Predicate]:
+    @staticmethod
+    def find_where_predicates(root: exp.Expression) -> list[exp.Predicate]:
         """
         Finds all Predicate nodes inside Where statements from some root node
         (usually the whole parsed output from sqlparser.parse_one()).

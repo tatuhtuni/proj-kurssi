@@ -6,15 +6,15 @@ from typing import Optional
 
 import sqlglot.expressions as exp
 
+from . import sqlparser
 from .sqlparser import SqlParser
 from .sqlparser import Column
 
+
 class CmpDomainChecker:
-    def __init__(self, parsed_sql: exp.Expression, columns: list[Column],
-                 sql_parser: SqlParser):
+    def __init__(self, parsed_sql: exp.Expression, columns: list[Column]):
         self.parsed_sql = parsed_sql
         self.columns = columns
-        self.sql_parser = sql_parser
 
     def check(self) -> bool:
         """
@@ -49,7 +49,7 @@ class CmpDomainChecker:
         if a.type.digits == None and b.type.digits == None:
             return True
         elif ((a.type.digits == None and b.type.digits != None) or
-            (a.type.digits != None and b.type.digits == None)):
+              (a.type.digits != None and b.type.digits == None)):
             return False
 
         if a.type.digits != b.type.digits:
@@ -58,12 +58,10 @@ class CmpDomainChecker:
             if a.type.precision == None and b.type.precision == None:
                 return True
             elif ((a.type.precision == None and b.type.precision != None) or
-                (a.type.precision != None and b.type.precision == None)):
+                  (a.type.precision != None and b.type.precision == None)):
                 return False
 
-
         return True
-
 
     def _is_suspicious_comparison(self, cmp: exp.Predicate,
                                   columns: list[Column]) -> bool:
@@ -85,13 +83,13 @@ class CmpDomainChecker:
         #        different tables have the same datatype
         column_expressions = cmp.find_all(exp.Column)
 
-
         cmp_column_names = []
         cmp_columns = []
 
         for column_expression in column_expressions:
             cmp_column_name = \
-                self.sql_parser.get_column_name_from_column_expression(column_expression)
+                SqlParser.get_column_name_from_column_expression(
+                    column_expression)
             cmp_column_names.append(cmp_column_name)
 
         for cmp_column_name in cmp_column_names:
@@ -105,16 +103,16 @@ class CmpDomainChecker:
 
         return not self._are_from_compatible_domains(cmp_columns[0], cmp_columns[1])
 
-
     def _has_suspicious_comparison(self, select_statement: exp.Select,
                                    columns: list[Column]) -> bool:
-        predicates = self.sql_parser.find_where_predicates(select_statement)
+        predicates = SqlParser.find_where_predicates(select_statement)
 
         # This filters predicates we are not interested in such as IN or EXISTS
-        binary_predicates = list(filter(lambda x: isinstance(x, exp.Binary), predicates))
+        binary_predicates = list(
+            filter(lambda x: isinstance(x, exp.Binary), predicates))
 
-        for cmp in binary_predicates:
-            print("'%s' is suspicous?: %s" % (str(cmp), self._is_suspicious_comparison(cmp, columns)))
+        # for cmp in binary_predicates:
+        #     print("'%s' is suspicous?: %s" % (str(cmp), self._is_suspicious_comparison(cmp, columns)))
 
         return any(filter(lambda x: self._is_suspicious_comparison(x, columns),
                           binary_predicates))
