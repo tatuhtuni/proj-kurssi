@@ -181,4 +181,3 @@ def test_gep_rfind(parser: qepparser.QEPParser):
     assert len(qep.root.rfindval("Node Type", "Bitmap Heap Scan")) == 1
     assert len(qep.root.rfindval("Node Type", "BitmapOr")) == 2
     assert len(qep.root.rfindval("Node Type", "Bitmap Index Scan")) == 4
-    
