@@ -10,7 +10,7 @@ from ..sqlparser import (
         SqlParser,
         Column,
     )
-from ..nested_condition_checker import SubquerySelectChecker
+from ..subquery_select_checker import SubquerySelectChecker
 
 CUSTOMERS_TABLE_NAME = "e29_test_table_customers"
 ORDERS_TABLE_NAME = "e29_test_table_orders"
