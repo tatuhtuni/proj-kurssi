@@ -1,3 +1,6 @@
+from dataclasses import dataclass
+from typing import Optional
+
 import sqlglot
 import sqlglot.expressions as exp
 
@@ -7,47 +10,76 @@ from .sqlparser import (
 )
 
 
-class NestedConditionChecker:
-    def __init__(self, parsed_sql: exp.Expression):
-        self.parsed_sql = parsed_sql
+VT100_UNDERLINE = "\x1b[4m"
+VT100_RESET = "\x1b[0m"
 
-    def check(self) -> bool:
+
+@dataclass(frozen=True)
+class SubquerySelectContext:
+    subquery: exp.Expression
+
+
+class SubquerySelectChecker:
+    def __init__(self, parsed_sql: exp.Expression, sql_parser: SqlParser):
+        self.parsed_sql: exp.Expression = parsed_sql
+        self.sql_parser: SqlParser = sql_parser
+        self.nested_condition_contexts: list[SubquerySelectContext] = []
+
+    def check(self) -> Optional[str]:
         """
-        Returns True if there is something worth in the query, otherwise False.
+        Returns warning message if there is nested condition not using any
+        of its own columns, otherwise returns None.
         """
+        self._detect_suspicious_nested_conditions()
 
-        return not self._has_suspicious_nested_condition()
+        if len(self.nested_condition_contexts) == 0:
+            return None
 
-    def _has_suspicious_nested_condition(self) -> bool:
+        warning_msg = ""
+
+        for i, nested_condition_context in enumerate(self.nested_condition_contexts):
+            whole_statement = str(self.parsed_sql)
+            subquery = str(nested_condition_context.subquery)
+            subquery_start_offset = whole_statement.find(subquery)
+            subquery_end_offset = subquery_start_offset + len(subquery)
+
+            warning_header = "Warning: No column in subquery SELECT references its tables [pg4n::SubquerySelect]\n"
+            underlined_query = whole_statement[:subquery_start_offset] + \
+                               VT100_UNDERLINE + \
+                               subquery + \
+                               VT100_RESET + \
+                               whole_statement[subquery_end_offset:len(whole_statement)]
+
+            warning_msg += warning_header + underlined_query
+
+            if i != len(self.nested_condition_contexts) - 1:
+                warning_msg += '\n'
+
+        return warning_msg
+
+    def _detect_suspicious_nested_conditions(self):
         # exp.In is not SubqueryPredicate for some reason
-        subquery_expressions = self.parsed_sql.find_all(exp.In, exp.SubqueryPredicate)
+        subqueries = self.parsed_sql.find_all(exp.In, exp.SubqueryPredicate)
 
-        if subquery_expressions == None:
-            return False
+        if subqueries == None:
+            return
 
-        subquery_columns = []
-        for subquery_expression in subquery_expressions:
-            column_expressions = subquery_expression.find_all(exp.Column)
-            for column_expression in column_expressions:
-                column = \
-                    SqlParser.get_column_name_from_column_expression(column_expression)
-                subquery_columns.append(column)
+        # We need to find whether the subquery SELECT uses a tuple variable (e.g. FROM
+        # statement) of the subquery.
+        for subquery in subqueries:
+            all_subquery_columns = self.sql_parser.get_query_columns(subquery)
+            all_subquery_column_names = [x.name for x in all_subquery_columns]
 
-        def subquery_remover(node):
-            if isinstance(node, (exp.In, exp.SubqueryPredicate)):
-                return None
-            return node
+            select_column_names = []
+            select = subquery.find(exp.Select)
+            for select_expression in select.expressions:
+                column_exps = select_expression.find_all(exp.Column)
+                for column_exp in column_exps:
+                    column_name = \
+                        SqlParser.get_column_name_from_column_expression(column_exp)
+                    select_column_names.append(column_name)
 
-        statement_without_subqueries = \
-                self.parsed_sql.transform(subquery_remover, copy=True)
-
-        toplevel_columns = []
-        toplevel_column_expressions = statement_without_subqueries.find_all(exp.Column)
-        for column_expression in toplevel_column_expressions:
-            column = \
-                SqlParser.get_column_name_from_column_expression(column_expression)
-            toplevel_columns.append(column)
-
-        unique_toplevel_columns = list(set(toplevel_columns))
-
-        return any(filter(lambda x: x not in unique_toplevel_columns, subquery_columns))
+            if all(filter(lambda x: x not in all_subquery_column_names,
+                          select_column_names)):
+                context = SubquerySelectContext(subquery)
+                self.nested_condition_contexts.append(context)
