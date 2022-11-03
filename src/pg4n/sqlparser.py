@@ -28,8 +28,8 @@ class SqlParser:
     Postgres.Tokenizer.KEYWORDS["BPCHAR"] = sqlglot.TokenType.CHAR
 
     def __init__(self, db_connection: psycopg.Connection):
-        self.dialect = "postgres"
-        self.db_connection = db_connection
+        self.dialect: str = "postgres"
+        self.db_connection: psycopg.Connection = db_connection
 
     def parse(self, sql: str) -> list[sqlglot.exp.Expression]:
         """
