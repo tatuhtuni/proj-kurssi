@@ -3,7 +3,7 @@
 Uses pexpect in combination with pyte for interfacing and screen-scraping
 """
 
-from typing import Callable
+from typing import Callable, List
 import pexpect
 from pyte import Stream, Screen
 from shutil import get_terminal_size
@@ -28,19 +28,24 @@ class PsqlWrapper:
 
     def __init__(self, db_name_parameter: bytes,
                  hook_f: Callable[str, str], parser: PsqlParser):
-        """Start wrapper on selected database."""
+        """Start wrapper on selected database.
+
+        :param db_name_parameter: is name of database we are connecting to.
+        :param hook_f: is a callback to which scraped SQL queries are passed \
+        to and from which semantic error messages are received in return.
+        :param parser: A parser that implements the required parsing functions.
+        """
         self.db_name = db_name_parameter
         self.analyze = hook_f
         self.parser = parser
 
+        # shutil.get_terminal_size()
         (self.cols, self.rows) = get_terminal_size()
 
+        # pyte.Screen, pyte.Stream
         self.pyte_screen: Screen = Screen(self.cols, self.rows)
         self.pyte_screen_output_sink: Stream = Stream(self.pyte_screen)
 
-        # Mennäänkin niin, että analyysi suoritetaan aina enteriä painaessa,
-        # ja jos löytyy järkevä lause niin tuotetaan viesti, joka tallennetaan
-        # seuraavaa promptia varten
         # Analysis is always done when user presses Return
         # and resulting message is saved until when new prompt comes in
         self.pg4n_message: str = ""
@@ -53,13 +58,20 @@ class PsqlWrapper:
                    output_filter=self.ofilter)
 
     def ifilter(self, input: bytes) -> bytes:
-        """User input filter function for pexpect.interact: not used."""
-        self.input_log = self.input_log + input
+        """User input filter function for pexpect.interact: not used.
+
+        :param input: user input characters.
+        :returns: unchanged input.
+        """
         return input
 
     def ofilter(self, output: bytes) -> bytes:
-        """Forward output to check_and_act_on_repl_output() and feed \
-        output to pyte screen for future screen-scraping."""
+        """Forward output to `check_and_act_on_repl_output()` and feed \
+        output to pyte screen for future screen-scraping.
+
+        :param output: output seen on terminal screen.
+        :returns: output with injected semantic error messages.
+        """
         new_output: bytes = self.check_and_act_on_repl_output(output)
 
         self.pyte_screen_output_sink.feed(bytes.decode(new_output))
@@ -80,11 +92,12 @@ class PsqlWrapper:
         or if a fresh prompt has come in and we can show them a helpful \
         message.
 
-        `latest_output` is in what the helpful message will be included in. \
-        It is also used for Return press and fresh prompt analysis.
+        :param latest_output: is used for Return press and fresh prompt \
+        analysis. It is also what the helpful message will be injected to.
+        :returns: output with injected semantic error messages.
         """
         # for optimization reasons, check output only if len() > 1, so keyboard
-        # input does not trigger parsing (Return is at least 2 length)
+        # input does not trigger parsing (Return is always at least 2 length)
         if len(latest_output) <= 1:
             return latest_output
 
@@ -104,40 +117,40 @@ class PsqlWrapper:
                     self.pg4n_message = self.analyze(parsed_sql_query)
             pass
 
+        # If we have a semantic error message waiting and there is a fresh
+        # prompt:
         # optimization: do not spend time parsing if there is no message:
         # AND-clause will stop executing after first False.
         if self.pg4n_message != "" \
-           and self.parser.parse_for_new_prompt(
+           and self.parser.parse_new_prompt(
                bytes.decode(latest_output)) != []:  # there is new prompt
-            new_output: bytes = self.replace_prompt(latest_output)
+            new_output: bytes = self._replace_prompt(latest_output)
             self.pg4n_message = ""
             return new_output
 
         return latest_output
 
-    def replace_prompt(self, prompt: bytes):
-        """Fit the new message in the right place, \
-        just on the previous line before new prompt."""
-        # TODO: fix and enhance this very naive implementation
+    def _replace_prompt(self, prompt: bytes):
+        """Inject saved semantic error message into given prompt.
 
-        newline_pos: int = prompt.rfind(b'\n')
-
-        if newline_pos < 0:
-            # trivial case. # b'\x1b[?2004hpgdb=> '
-            return self.pg4n_message.encode("utf-8") + b'\r\n' + prompt
-        else:
-            # prompt is more complicated and has newlines in it:
-            # psql REPL has outputted a multiline chunk that may
-            # a) start from previous prompt
-            # b) amidst a return statement
-
-            prompt_line_begins_at: int = prompt.rfind(b'\x1b')
-
-            return prompt[:prompt_line_begins_at - 1] + \
-                self.pg4n_message.encode("utf-8") + b'\r\n' + \
-                prompt[prompt_line_begins_at:]
+        :param prompt: is where the message is injected. A fresh prompt is \
+        expected.
+        :returns: a prompt with injected message.
+        """
+        split_prompt: List[str] = \
+            self.parser.parse_new_prompt_and_rest(
+                bytes.decode(prompt, "utf-8"))
+        return bytes(split_prompt[0] + "\r\n" +
+                     self.pg4n_message + "\r\n\r\n" +
+                     split_prompt[1],
+                     "utf-8")
 
     def _user_hit_return(self, output: bytes) -> bool:
+        """Check if user hit return.
+
+        :param output: is raw console output to be checked for return press.
+        :returns: if user has indeed hit return.
+        """
         # trivial case:
         # we assume only situation with \r\n at start of
         # line is when user has pressed enter
@@ -146,6 +159,6 @@ class PsqlWrapper:
 
         # complicated case: user has ctrl-R'd, copy-pasted command or something,
         # and the \r\n is somewhere in midst of output..
-        if self.parser.parse_for_magical_return(
+        if self.parser.parse_magical_return(
                 bytes.decode(output, "utf-8")) != []:
             return True

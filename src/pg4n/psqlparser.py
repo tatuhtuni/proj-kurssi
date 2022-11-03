@@ -2,12 +2,16 @@
 
 from typing import List
 from pyparsing import CaselessLiteral, Char, Literal, MatchFirst, \
-    ParseException, ParseResults, ParserElement, Word, \
+    ParseException, ParseResults, ParserElement, StringEnd, Word, ZeroOrMore, \
     identbodychars
 from functools import reduce
 from string import printable
 
-ParserElement.enablePackrat(None)  # Turn on memoization optimization
+# Turn on memoization optimization
+ParserElement.enablePackrat(None)
+
+# default whitespace rules complicate things needlessly, remove them:
+ParserElement.setDefaultWhitespaceChars('')
 
 
 class PsqlParser:
@@ -47,9 +51,9 @@ class PsqlParser:
     match_prompt: ParserElement = \
         MatchFirst([tok_prompt])
     match_sql_stmt_start: ParserElement = \
-        CaselessLiteral("SELECT")  # All interesting stmts are 'select'
+        CaselessLiteral("SELECT ")  # All interesting stmts are 'select'
     match_rev_sql_stmt_start: ParserElement = \
-        CaselessLiteral("TCELES")
+        CaselessLiteral(" TCELES")
     match_sql_stmt: ParserElement = \
         Word(stmt_chars)
     match_whole_rev_sql_stmt: ParserElement = \
@@ -65,10 +69,8 @@ class PsqlParser:
 
     # magic strings related to solely to ctrl-R use are
     # "\r\n\x1b[?2004l\r", "\r\n\r\r\n" and "\x08\r\n".
-    # For some reason 1st string's last \r is never matched? So it had
-    # to be left out
     match_rev_magical_returns: ParserElement = \
-        Literal("\r\n\x1b[?2004l"[::-1]) \
+        Literal("\r\n\x1b[?2004l\r"[::-1]) \
         | Literal("\r\n\r\r\n"[::-1]) \
         | Literal("\x08\r\n"[::-1])
 
@@ -76,12 +78,12 @@ class PsqlParser:
         """Plain constructor for PsqlParser."""
         pass
 
-    def parse_for_new_prompt(self, psql: str) -> List[str]:
+    def parse_new_prompt(self, psql: str) -> List[str]:
         """Parse for an empty prompt, to detect when a query \
         evaluation has ended.
 
-        Parameter must include terminal control codes.
-        Returns an empty list if none found.
+        :param psql: Raw console output that includes terminal control codes.
+        :returns: an empty list if no prompt found. Otherwise has prompt text.
         """
         # cheaper and easier to reverse & start from the end
         psql_rev: str = psql[::-1]
@@ -90,11 +92,11 @@ class PsqlParser:
 
         # TODO: For some reason Literal(" >=") does not provide a match,
         # but works fine without the whitespace..
-        match_prompt_end: ParserElement = \
-            Literal(">=") | Literal("#=")
+        match_rev_prompt_end: ParserElement = \
+            Literal(" >=") | Literal(" #=")
 
         try:
-            prompt_res = match_prompt_end.parse_string(psql_rev)
+            prompt_res = match_rev_prompt_end.parse_string(psql_rev)
         except ParseException as e:
             if self.debug:
                 f = open("psqlparser.log", "a")
@@ -106,11 +108,49 @@ class PsqlParser:
 
         return results
 
-    def parse_for_magical_return(self, psql: str) -> List[str]:
+    def parse_new_prompt_and_rest(self, psql: str) -> List[str]:
+        """Parse for an empty prompt and everything preceding it \
+        to 2 cells.
+
+        :param psql: Raw console output that includes terminal control codes.
+        :returns: a two-part list with everything before the prompt \
+        line and then the prompt, to allow easy message injection.
+        """
+        # cheaper and easier to reverse & start from the end
+        psql_rev: str = psql[::-1]
+        results: List[str] = []
+        prompt_res: ParseResults = None
+
+        match_rev_prompt_and_then_rest: ParserElement = \
+            (Literal(" >=") | Literal(" #=")) + \
+            Word(self.prompt_chars) + Literal("?[\x1b") + \
+            ... + StringEnd()
+
+        try:
+            prompt_res = match_rev_prompt_and_then_rest.parse_string(psql_rev)
+        except ParseException as e:
+            if self.debug:
+                f = open("psqlparser.log", "a")
+                f.write(str(e.explain()) + "\n")
+                f.close()
+
+        if prompt_res:
+            res_list = prompt_res.as_list()
+            results = [res_list[3][::-1],
+                       res_list[2][::-1] +
+                       res_list[1][::-1] +
+                       res_list[0][::-1]
+                       ]
+
+        return results
+
+
+    def parse_magical_return(self, psql: str) -> List[str]:
         """Parse for weird Return presses.
 
-        Parameter must include terminal control codes.
-        Returns an empty list if no presses are found.
+        :param psql: Raw console output that includes terminal control codes.
+        :returns: an empty list if no presses are found. \
+        Otherwise has newline text.
         """
         psql_rev: str = psql[::-1]
 
@@ -133,7 +173,9 @@ class PsqlParser:
     def parse_last_found_stmt(self, psql: str) -> str:
         """Parse for last SQL query statement in a string.
 
-        Returns parsed SQL query as plain string.
+        :param psql: screenscraped psql string
+
+        :returns: parsed SQL query as plain string.
         """
         # reverse given string, match reversed tokens, pick first match,
         # then reverse the matched string.
@@ -144,7 +186,7 @@ class PsqlParser:
         #      Fix it by matching rev_stmt_start also against rev_prompt
         # TODO: strip "->"/"-#" from string to allow multiline queries
         match_last_stmt: ParserElement = \
-            self.match_whole_rev_sql_stmt
+            ZeroOrMore(Char("\n") | Char("\r")) + self.match_whole_rev_sql_stmt
 
         results: List[str] = []
         stmt_res: ParseResults = None
@@ -159,8 +201,7 @@ class PsqlParser:
         if stmt_res:
             stmt_res_list = stmt_res.as_list()
             length: int = len(stmt_res_list)
-            # TODO: instead of magic number 3 (per match statement length),
-            # derive 3 from list length or something
+
             results = [stmt_res_list[length - 1],
                        stmt_res_list[length - 2],
                        stmt_res_list[length - 3]]  # reverse order
