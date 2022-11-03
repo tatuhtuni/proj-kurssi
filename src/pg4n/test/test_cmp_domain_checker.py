@@ -566,10 +566,18 @@ SELECT customer_id
 FROM {CUSTOMERS_TABLE_NAME}
 WHERE fname > nickname;"""
 
+    SQL_MULTI_VARCHAR_SUSPICIOUS = \
+f"""
+SELECT customer_id
+FROM {CUSTOMERS_TABLE_NAME}
+WHERE fname > nickname AND
+      sname < nickname AND
+      customer_id = customer_id;"""
+
     SQL_INT_VARCHAR_VALID = \
 f"""
 SELECT customer_id
-FORM {CUSTOMERS_TABLE_NAME}
+FROM {CUSTOMERS_TABLE_NAME}
 WHERE fname > customer_id;"""
 
     SQL_MULTI_CMP_VALID = \
@@ -597,33 +605,50 @@ WHERE (order_total_eur = order_total_eur) AND
                        FROM {CUSTOMERS_TABLE_NAME} AS c
                        WHERE c.fname > c.nickname);"""
 
-    SUSPICIOUS = False
-    VALID = True
-
     sql_statement = SQL_VARCHAR_SUSPICIOUS
     parsed_sql = sql_parser.parse_one(sql_statement)
     columns = sql_parser.get_query_columns(parsed_sql)
     checker = CmpDomainChecker(parsed_sql, columns)
     assert checker != None
-    assert checker.check() == SUSPICIOUS
+    warning_msg = checker.check()
+    assert warning_msg != None
+
+    sql_statement = SQL_MULTI_VARCHAR_SUSPICIOUS
+    parsed_sql = sql_parser.parse_one(sql_statement)
+    columns = sql_parser.get_query_columns(parsed_sql)
+    checker = CmpDomainChecker(parsed_sql, columns)
+    assert checker != None
+    warning_msg = checker.check()
+    assert warning_msg != None
+
+    sql_statement = SQL_INT_VARCHAR_VALID
+    parsed_sql = sql_parser.parse_one(sql_statement)
+    columns = sql_parser.get_query_columns(parsed_sql)
+    checker = CmpDomainChecker(parsed_sql, columns)
+    assert checker != None
+    warning_msg = checker.check()
+    assert warning_msg == None
 
     sql_statement = SQL_MULTI_CMP_VALID
     parsed_sql = sql_parser.parse_one(sql_statement)
     columns = sql_parser.get_query_columns(parsed_sql)
     checker = CmpDomainChecker(parsed_sql, columns)
     assert checker != None
-    assert checker.check() == VALID
+    warning_msg = checker.check()
+    assert warning_msg == None
 
     sql_statement = SQL_NESTED_WHERE_VALID
     parsed_sql = sql_parser.parse_one(sql_statement)
     columns = sql_parser.get_query_columns(parsed_sql)
     checker = CmpDomainChecker(parsed_sql, columns)
     assert checker != None
-    assert checker.check() == VALID
+    warning_msg = checker.check()
+    assert warning_msg == None
 
     sql_statement = SQL_NESTED_WHERE_SUSPICIOUS
     parsed_sql = sql_parser.parse_one(sql_statement)
     columns = sql_parser.get_query_columns(parsed_sql)
     checker = CmpDomainChecker(parsed_sql, columns)
     assert checker != None
-    assert checker.check() == SUSPICIOUS
+    warning_msg = checker.check()
+    assert warning_msg != None

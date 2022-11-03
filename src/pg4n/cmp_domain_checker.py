@@ -11,16 +11,31 @@ from .sqlparser import SqlParser
 from .sqlparser import Column
 
 
+VT100_UNDERLINE = "\x1b[4m"
+VT100_RESET = "\x1b[0m"
+
+@dataclass(frozen=True)
+class CmpContext:
+    expression: exp.Predicate
+    a: Column
+    b: Column
+
 class CmpDomainChecker:
     def __init__(self, parsed_sql: exp.Expression, columns: list[Column]):
-        self.parsed_sql = parsed_sql
-        self.columns = columns
+        self.parsed_sql: str = parsed_sql
+        self.columns: list[Column] = columns
+        self.suspicious_cmp_contexts: list[CmpContext] = []
+        self.warning_msg: Optional[str] = None
 
-    def check(self) -> bool:
+    def check(self) -> Optional[str]:
         """
-        Returns True if no 'bad' comparisons are done, False otherwise.
+        Does analysis for suspicous comparisons between different domains.
+        e.g., comparing columns off type VARCHAR(20) and VARCHAR(50)
+        Returns a warning message if something was found, otherwise None.
         """
-        return not self._has_suspicious_comparison(self.parsed_sql, self.columns)
+
+        self._detect_suspicious_cmps(self.parsed_sql, self.columns)
+        return self.warning_msg
 
     def _are_from_compatible_domains(self, a: Column, b: Column) -> bool:
         """
@@ -63,13 +78,12 @@ class CmpDomainChecker:
 
         return True
 
-    def _is_suspicious_comparison(self, cmp: exp.Predicate,
-                                  columns: list[Column]) -> bool:
+    def _detect_suspicious_cmp(self, cmp: exp.Predicate, columns: list[Column]):
         """
-        Finds wheter 'cmp' has comparison between columns from different domains
+        Detects whether 'cmp' has comparison between columns from different domains
         e.g. a: VARCHAR(10) < b: VARCHAR(50)
 
-        Only works for comparasons between 2 variables. In other words, if
+        Only works for comparisons between 2 variables. In other words, if
         any operand in the comparison is literal this function returns False.
 
         Ignores any casts used for the operands.
@@ -101,21 +115,57 @@ class CmpDomainChecker:
         if len(cmp_columns) < 2:
             return False
 
-        return not self._are_from_compatible_domains(cmp_columns[0], cmp_columns[1])
+        if not self._are_from_compatible_domains(cmp_columns[0], cmp_columns[1]):
+            cmp_context = CmpContext(cmp, cmp_columns[0], cmp_columns[1])
+            self.suspicious_cmp_contexts.append(cmp_context)
 
-    def _has_suspicious_comparison(self, select_statement: exp.Select,
-                                   columns: list[Column]) -> bool:
+    def _detect_suspicious_cmps(self, select_statement: exp.Select,
+                                columns: list[Column]):
         predicates = SqlParser.find_where_predicates(select_statement)
 
         # This filters predicates we are not interested in such as IN or EXISTS
         binary_predicates = list(
             filter(lambda x: isinstance(x, exp.Binary), predicates))
 
-        # for cmp in binary_predicates:
-        #     print("'%s' is suspicous?: %s" % (str(cmp), self._is_suspicious_comparison(cmp, columns)))
+        for binary_predicate in binary_predicates:
+            self._detect_suspicious_cmp(binary_predicate, columns)
 
-        return any(filter(lambda x: self._is_suspicious_comparison(x, columns),
-                          binary_predicates))
+        if len(self.suspicious_cmp_contexts) == 0:
+            return
+
+        for i, suspicious_cmp_context in enumerate(self.suspicious_cmp_contexts):
+            if self.warning_msg == None:
+                self.warning_msg = ""
+            whole_statement = str(select_statement)
+
+            domain1 = suspicious_cmp_context.a.type.name
+            domain2 = suspicious_cmp_context.b.type.name
+            msg_header = f"Warning: Comparison between different domains ({domain1}, {domain2}) [pg4n::CmpDomains]\n"
+
+            cmp_exp = suspicious_cmp_context.expression
+
+            # It does not matter which column's ancestor Where expression we
+            # find because both necessarily have the same.
+            containing_where = str(cmp_exp.find_ancestor(exp.Where))
+            containing_where_start_offset = whole_statement.find(containing_where)
+            containing_where_end_offset = containing_where_start_offset + \
+                                          len(containing_where)
+
+            cmp_start_offset = containing_where.find(str(cmp_exp))
+            cmp_end_offset = cmp_start_offset + len(str(cmp_exp))
+
+            total_start_offset = containing_where_start_offset + cmp_start_offset
+            total_end_offset = containing_where_start_offset + cmp_end_offset
+
+            underlined_query = whole_statement[:total_start_offset] + \
+                               VT100_UNDERLINE + \
+                               whole_statement[total_start_offset:total_end_offset] + \
+                               VT100_RESET + \
+                               whole_statement[total_end_offset:len(whole_statement)]
+
+            self.warning_msg = self.warning_msg + msg_header + underlined_query
+            if i != len(self.suspicious_cmp_contexts) - 1:
+                self.warning_msg += '\n'
 
 
 def _find_column(column_name: str, columns: list[Column]) -> Optional[Column]:
