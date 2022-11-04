@@ -1,8 +1,9 @@
-on: push
+on: [push, pull_request]
 
 jobs:
-  ci-flow:
+  push_flow:
     runs-on: ubuntu-latest
+    if: github.event_name == 'push'
 
     services:
       postgres:
@@ -18,42 +19,14 @@ jobs:
           - 5432:5432
 
     steps:
-      - uses: actions/checkout@v2
-
-      - uses: actions/setup-python@v2
-        with:
-          python-version: 3.10.7
-
-      # "-0" allows invalidating the cache for upgrading Poetry
-      - uses: actions/cache@v2
-        with:
-          path: ~/.local
-          key: poetry-1.2.2-0
-
-      # `virtualenvs-in-project: true` creates a `.venv` in test dir for easy caching
-      - uses: snok/install-poetry@v1
-        with:
-          version: 1.2.2
-          virtualenvs-create: true
-          virtualenvs-in-project: true
-
-      - id: cache-deps
-        uses: actions/cache@v2
-        with:
-          path: .venv
-          key: pydeps-${{ hashFiles('**/poetry.lock') }}
-
-      - run: poetry install --no-interaction --with ci --no-root
-        if: steps.cache-deps.outputs.cache-hit != 'true'
-      - run: poetry install --no-interaction --with ci
-
+      - uses: common/install.yml@main
       - run: poetry run pytest
         env:
           PGPORT: 5432
           PGHOST: localhost
           PGUSER: postgres
           PGPASSWORD: postgres
-        
+
       - run: |
           poetry run -- bash -c 'echo a && mypy src --show-error-codes --show-error-context --no-error-summary;
           echo b && black src --check;
@@ -65,7 +38,7 @@ jobs:
           poetry run sphinx-build -q -b html docs docs/build && \
           touch docs/build/.nojekyll
         if: github.ref == 'refs/heads/main'
-        
+
       - uses: JamesIves/github-pages-deploy-action@v4
         if: github.ref == 'refs/heads/main'
         with:
@@ -74,3 +47,17 @@ jobs:
           folder: docs/build
           git-config-name: github-actions
           git-config-email: <>
+
+  # prints the result of running scripts/ci-grade.sh
+  pr_flow:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - uses: common/install.yml@main
+      - name: Comment PR
+        uses: thollander/actions-comment-pull-request@v1
+        with:
+          message: $(poetry run scripts/ci-grade.sh)
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
