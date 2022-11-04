@@ -611,41 +611,41 @@ SELECT (1, 2, 3);"""
     parsed_sql = sql_parser.parse_one(sql_statement)
     checker = SubquerySelectChecker(parsed_sql, sql_parser)
 
-    assert checker != None
+    assert checker is not None
     warning_msg = checker.check()
-    assert warning_msg != None
+    assert warning_msg is not None
 
     sql_statement = SQL_SUBQUERY_SELECT_IN_SUSPICIOUS
     parsed_sql = sql_parser.parse_one(sql_statement)
     checker = SubquerySelectChecker(parsed_sql, sql_parser)
-    assert checker != None
+    assert checker is not None
     warning_msg = checker.check()
-    assert warning_msg != None
+    assert warning_msg is not None
 
     sql_statement = SQL_SUBQUERY_SELECT_WITH_TOPLEVEL_CONDITIONS_SUSPICIOUS
     parsed_sql = sql_parser.parse_one(sql_statement)
     checker = SubquerySelectChecker(parsed_sql, sql_parser)
-    assert checker != None
+    assert checker is not None
     warning_msg = checker.check()
-    assert warning_msg != None
+    assert warning_msg is not None
 
     sql_statement = SQL_MULTIPLE_SUBQUERY_SELECTS_SUSPICIOUS
     parsed_sql = sql_parser.parse_one(sql_statement)
     checker = SubquerySelectChecker(parsed_sql, sql_parser)
-    assert checker != None
+    assert checker is not None
     warning_msg = checker.check()
-    assert warning_msg != None
+    assert warning_msg is not None
 
     sql_statement = SQL_NO_SUBQUERIES
     parsed_sql = sql_parser.parse_one(sql_statement)
     checker = SubquerySelectChecker(parsed_sql, sql_parser)
-    assert checker != None
+    assert checker is not None
     warning_msg = checker.check()
-    assert warning_msg == None
+    assert warning_msg is None
 
     sql_statement = SQL_NO_CONDITIONS
     parsed_sql = sql_parser.parse_one(sql_statement)
     checker = SubquerySelectChecker(parsed_sql, sql_parser)
-    assert checker != None
+    assert checker is not None
     warning_msg = checker.check()
-    assert warning_msg == None
+    assert warning_msg is None

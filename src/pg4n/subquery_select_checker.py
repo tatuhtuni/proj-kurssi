@@ -1,13 +1,9 @@
 from dataclasses import dataclass
 from typing import Optional
 
-import sqlglot
 import sqlglot.expressions as exp
 
-from .sqlparser import (
-    Column,
-    SqlParser,
-)
+from .sqlparser import SqlParser
 
 
 VT100_UNDERLINE = "\x1b[4m"
@@ -27,8 +23,8 @@ class SubquerySelectChecker:
 
     def check(self) -> Optional[str]:
         """
-        Returns warning message if there no column SELECTed in a subquery is not
-        used in that subquery of its own columns, otherwise returns None.
+        Returns warning message if there no column SELECTed in a subquery is
+        not used in that subquery of its own columns, otherwise returns None.
         """
         self._detect_suspicious_nested_conditions()
 
@@ -37,7 +33,8 @@ class SubquerySelectChecker:
 
         warning_msg = ""
 
-        for i, nested_condition_context in enumerate(self.nested_condition_contexts):
+        for i, nested_condition_context in \
+                enumerate(self.nested_condition_contexts):
             whole_statement = str(self.parsed_sql)
             subquery = str(nested_condition_context.subquery)
             subquery_start_offset = whole_statement.find(subquery)
@@ -61,11 +58,11 @@ class SubquerySelectChecker:
         # exp.In is not SubqueryPredicate for some reason
         subqueries = self.parsed_sql.find_all(exp.In, exp.SubqueryPredicate)
 
-        if subqueries == None:
+        if subqueries is None:
             return
 
-        # We need to find whether the subquery SELECT uses a tuple variable (e.g. FROM
-        # statement) of the subquery.
+        # We need to find whether the subquery SELECT uses a tuple variable
+        # (e.g. FROM statement) of the subquery.
         for subquery in subqueries:
             all_subquery_columns = self.sql_parser.get_query_columns(subquery)
             all_subquery_column_names = [x.name for x in all_subquery_columns]
