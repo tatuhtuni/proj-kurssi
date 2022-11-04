@@ -1,7 +1,5 @@
 from typing import Optional
-from dataclasses import dataclass
 
-import sqlglot
 import sqlglot.expressions as exp
 
 from . qepparser import QEPAnalysis
@@ -20,10 +18,10 @@ class SubqueryOrderByChecker:
         This check gives misses some situations with redundant ORDER BY but
         should never give false positives, only false negatives.
         """
-        # TODO: More sophisticated check that inspects self.parsed_sql and finds more
-        #       warnings than postgresql.
+        # TODO: More sophisticated check that inspects self.parsed_sql and
+        #       finds more warnings than postgresql.
 
-        has_orderby = self.parsed_sql.find(exp.Order) != None
+        has_orderby = self.parsed_sql.find(exp.Order) is not None
         has_sort_node = len(
             self.qep_analysis.root.rfindval("Node Type", "Sort")) > 0
         has_inner_orderby = has_orderby and not has_sort_node

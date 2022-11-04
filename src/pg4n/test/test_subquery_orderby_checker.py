@@ -617,36 +617,36 @@ WHERE EXISTS (SELECT *
     parsed_sql = sql_parser.parse_one(sql_statement)
     qep_analysis = qep_parser(sql_statement)
     checker = SubqueryOrderByChecker(parsed_sql, qep_analysis)
-    assert checker != None
+    assert checker is not None
     warning_msg = checker.check()
-    assert warning_msg != None
+    assert warning_msg is not None
 
     print("SQL_OUTER_ORDER_WITHOUT_INNER_ORDER")
     sql_statement = SQL_OUTER_ORDER_WITHOUT_INNER_ORDER
     parsed_sql = sql_parser.parse_one(sql_statement)
     qep_analysis = qep_parser(sql_statement)
     checker = SubqueryOrderByChecker(parsed_sql, qep_analysis)
-    assert checker != None
+    assert checker is not None
     warning_msg = checker.check()
-    assert warning_msg == None
+    assert warning_msg is None
 
     print("SQL_OUTER_ORDER_WITH_INNER_ORDER")
     sql_statement = SQL_OUTER_ORDER_WITH_INNER_ORDER
     parsed_sql = sql_parser.parse_one(sql_statement)
     qep_analysis = qep_parser(sql_statement)
     checker = SubqueryOrderByChecker(parsed_sql, qep_analysis)
-    assert checker != None
+    assert checker is not None
     warning_msg = checker.check()
-    assert warning_msg == None
+    assert warning_msg is None
 
     print("SQL_MULTIPLE_INNER_ORDERS")
     sql_statement = SQL_MULTIPLE_INNER_ORDERS
     parsed_sql = sql_parser.parse_one(sql_statement)
     qep_analysis = qep_parser(sql_statement)
     checker = SubqueryOrderByChecker(parsed_sql, qep_analysis)
-    assert checker != None
+    assert checker is not None
     warning_msg = checker.check()
-    assert warning_msg != None
+    assert warning_msg is not None
 
     # This check still gives false negatives so we intentionally don't test for
     # everything. This check is left here for documentation of one such case.
@@ -655,7 +655,7 @@ WHERE EXISTS (SELECT *
     parsed_sql = sql_parser.parse_one(sql_statement)
     qep_analysis = qep_parser(sql_statement)
     checker = SubqueryOrderByChecker(parsed_sql, qep_analysis)
-    assert checker != None
+    assert checker is not None
     warning_msg = checker.check()
     # False negative: dont assert
-    # assert warning_msg != None
+    # assert warning_msg is not None
