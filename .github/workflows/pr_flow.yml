@@ -9,16 +9,10 @@ jobs:
       - uses: ./.github/actions/install
       - shell: bash
         run: |
-          echo 'GRADE<<EOF' >> $GITHUB_ENV
-          poetry run scripts/ci-grade.sh >> $GITHUB_ENV
-          echo 'EOF' >> $GITHUB_ENV
+          poetry run scripts/ci-grade.sh > grade.txt
       - name: Comment PR
-        uses: thollander/actions-comment-pull-request@v1
+        uses: marocchino/sticky-pull-request-comment@v2
         with:
-          message: |
-            ```
-            ${{ env.GRADE }}
-            ```
-          comment_includes: '```'
+          path: grade.txt
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_SECRET }}
