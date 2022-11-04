@@ -26,5 +26,7 @@ runs:
         key: pydeps-${{ hashFiles('**/poetry.lock') }}
 
     - run: poetry install --no-interaction --with ci --no-root
+      shell: bash
       if: steps.cache-deps.outputs.cache-hit != 'true'
     - run: poetry install --no-interaction --with ci
+      shell: bash
