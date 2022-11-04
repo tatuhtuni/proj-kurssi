@@ -29,6 +29,7 @@ node = TypedDict("Plan", {
     "Index Name": str,
     "Triggers": list[str],
     "Total Runtime": float,
+    "One-Time Filter": str,
 })
 
 qep = TypedDict("QEP", {
@@ -160,13 +161,18 @@ class QEPAnalysis:
 class QEPParser:
     """Performs analyses on given queries, returning resultant QEPAnalysis."""
 
-    def __init__(self, *args, conn=None, **kwargs):
+    def __init__(self, *args, conn=None, constraint_exclusion=True, **kwargs):
         self._ref = bool(conn)
         self._conn: Connection = conn or psycopg.connect(*args, **kwargs)
         # use constraint_exclusion to avoid unnecessary index scans
-        with self._conn.cursor() as cur:
-            cur.execute("set constraint_exclusion = on;")
-            self._conn.commit()
+        if constraint_exclusion:
+            with self._conn.cursor() as cur:
+                cur.execute("set constraint_exclusion = on;")
+                self._conn.commit()
+        else:
+            with self._conn.cursor() as cur:
+                cur.execute("set constraint_exclusion = off;")
+                self._conn.commit()
 
     def __del__(self):
         if not self._ref:
