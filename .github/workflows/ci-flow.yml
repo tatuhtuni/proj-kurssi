@@ -62,7 +62,7 @@ jobs:
       - shell: bash
         run: |
           echo 'GRADE<<EOF' >> $GITHUB_ENV
-          poetry run scripts/ci-grade.sh >> $GITHUB_ENV
+          poetry run scripts/ci-grade.sh | head -n 100 >> $GITHUB_ENV
           echo 'EOF' >> $GITHUB_ENV
       - name: Comment PR
         uses: thollander/actions-comment-pull-request@v1
