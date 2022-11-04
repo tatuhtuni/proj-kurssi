@@ -59,15 +59,10 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: ./.github/actions/install
-      - run: echo grade=$(poetry run scripts/ci-grade.sh) >> $GITHUB_OUTPUT
+      - run: |
+          cigrade=$(poetry run scripts/ci-grade.sh)
+          echo grade=$cigrade >> $GITHUB_OUTPUT
         id: grade
-
-  pr_comment:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-    needs: grade
-
-    steps:
       - name: Comment PR
         uses: thollander/actions-comment-pull-request@v1
         with:
