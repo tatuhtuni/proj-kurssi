@@ -23,11 +23,11 @@ class PsqlWrapper:
     input_log: bytes = b''
     output_log: bytes = b''
     db_name: bytes = b''
-    analyze: Callable[str, str]
+    analyze: Callable[[str], str]
     parser: PsqlParser
 
     def __init__(self, db_name_parameter: bytes,
-                 hook_f: Callable[str, str], parser: PsqlParser):
+                 hook_f: Callable[[str], str], parser: PsqlParser):
         """Build wrapper for selected database.
 
         :param db_name_parameter: is name of database we are connecting to.
@@ -160,3 +160,4 @@ class PsqlWrapper:
         if self.parser.parse_magical_return(
                 bytes.decode(output, "utf-8")) != []:
             return True
+        return False
