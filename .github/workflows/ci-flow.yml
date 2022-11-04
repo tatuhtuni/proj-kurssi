@@ -53,13 +53,13 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
 
-    outputs:
-      grade: ${{ steps.grade.outputs.grade }}
+    # outputs:
+    #   grade: ${{ steps.grade.outputs.grade }}
 
     steps:
       - uses: actions/checkout@v2
       - uses: ./.github/actions/install
-      - run: poetry run scripts/ci-grade.sh >> $GITHUB_OUTPUT
+      - run: echo grade=$(poetry run scripts/ci-grade.sh) >> $GITHUB_OUTPUT
         id: grade
 
   pr_comment:
