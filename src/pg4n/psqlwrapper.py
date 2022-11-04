@@ -28,7 +28,7 @@ class PsqlWrapper:
 
     def __init__(self, db_name_parameter: bytes,
                  hook_f: Callable[str, str], parser: PsqlParser):
-        """Start wrapper on selected database.
+        """Build wrapper for selected database.
 
         :param db_name_parameter: is name of database we are connecting to.
         :param hook_f: is a callback to which scraped SQL queries are passed \
@@ -50,6 +50,9 @@ class PsqlWrapper:
         # and resulting message is saved until when new prompt comes in
         self.pg4n_message: str = ""
 
+    def start(self):
+        """Start psql process and then start feeding hook function with \
+        intercepted output."""
         c = pexpect.spawn("psql " + bytes.decode(self.db_name),
                           encoding="utf-8",
                           dimensions=(self.rows, self.cols))
@@ -110,12 +113,7 @@ class PsqlWrapper:
                 self.parser.parse_last_found_stmt(screen)
             if parsed_sql_query != "":
                 # feed query to hook function and save resulting message
-                if self.debug:
-                    self.pg4n_message = "SQL query: " + parsed_sql_query + \
-                        "\r\n" + self.analyze(parsed_sql_query)
-                else:
-                    self.pg4n_message = self.analyze(parsed_sql_query)
-            pass
+                self.pg4n_message = self.analyze(parsed_sql_query)
 
         # If we have a semantic error message waiting and there is a fresh
         # prompt:

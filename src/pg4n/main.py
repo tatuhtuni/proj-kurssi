@@ -6,9 +6,10 @@ def main():
     from . import psqlwrapper
 
     if len(sys.argv) > 1:
-        wrap = psqlwrapper.PsqlWrapper(sys.argv[1].encode("utf-8"),
+        psql = psqlwrapper.PsqlWrapper(sys.argv[1].encode("utf-8"),
                                        lambda x: "Helpful message",
                                        psqlparser.PsqlParser())
+        psql.start()
     else:
         print(f"{os.path.basename(sys.executable)} main.py <database name>")
 

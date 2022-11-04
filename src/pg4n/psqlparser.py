@@ -80,10 +80,11 @@ class PsqlParser:
 
     def parse_new_prompt(self, psql: str) -> List[str]:
         """Parse for an empty prompt, to detect when a query \
-        evaluation has ended.
+        evaluation has ended. 
 
         :param psql: Raw console output that includes terminal control codes.
-        :returns: an empty list if no prompt found. Otherwise has prompt text.
+        :returns: an empty list if no prompt found. Otherwise has [' >='] or \
+        [' #='].
         """
         # cheaper and easier to reverse & start from the end
         psql_rev: str = psql[::-1]
