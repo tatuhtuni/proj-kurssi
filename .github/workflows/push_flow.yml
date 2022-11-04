@@ -1,9 +1,8 @@
-on: [push, pull_request]
+on: push
 
 jobs:
   push_flow:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
 
     services:
       postgres:
@@ -48,29 +47,3 @@ jobs:
           folder: docs/build
           git-config-name: github-actions
           git-config-email: <>
-
-  pr_grade:
-    runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
-
-    # outputs:
-    #   grade: ${{ steps.grade.outputs.grade }}
-
-    steps:
-      - uses: actions/checkout@v2
-      - uses: ./.github/actions/install
-      - shell: bash
-        run: |
-          echo 'GRADE<<EOF' >> $GITHUB_ENV
-          poetry run scripts/ci-grade.sh | head -n 100 >> $GITHUB_ENV
-          echo 'EOF' >> $GITHUB_ENV
-      - name: Comment PR
-        uses: thollander/actions-comment-pull-request@v1
-        with:
-          message: |
-            ```
-            ${{ env.GRADE }}
-            ```
-          comment_includes: '```'
-        env:
-          GITHUB_TOKEN: ${{ secrets.BOT_SECRET }}
