@@ -60,7 +60,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - uses: ./.github/actions/install
-      - run: poetry run scripts/ci-grade.sh
+      - run: poetry run scripts/ci-grade.sh >> $GITHUB_OUTPUT
         id: grade
       - name: Comment PR
         uses: thollander/actions-comment-pull-request@v1
