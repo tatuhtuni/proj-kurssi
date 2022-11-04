@@ -19,6 +19,7 @@ jobs:
           - 5432:5432
 
     steps:
+      - uses: actions/checkout@v2
       - uses: common/install.yml@main
       - run: poetry run pytest
         env:
@@ -54,6 +55,7 @@ jobs:
     if: github.event_name == 'pull_request'
 
     steps:
+      - uses: actions/checkout@v2
       - uses: common/install.yml@main
       - name: Comment PR
         uses: thollander/actions-comment-pull-request@v1
