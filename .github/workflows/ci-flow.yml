@@ -60,6 +60,10 @@ jobs:
       - name: Comment PR
         uses: thollander/actions-comment-pull-request@v1
         with:
-          message: $(poetry run scripts/ci-grade.sh)
+          message: |
+            ```
+            $(poetry run bash scripts/ci-grade.sh)
+            ```
+          comment_includes: ''
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
