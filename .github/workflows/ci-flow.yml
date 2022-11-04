@@ -50,7 +50,7 @@ jobs:
           git-config-email: <>
 
   # prints the result of running scripts/ci-grade.sh
-  get_grade:
+  pr_flow:
     runs-on: ubuntu-latest
     if: github.event_name == 'pull_request'
 
