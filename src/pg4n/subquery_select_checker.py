@@ -5,8 +5,8 @@ import sqlglot
 import sqlglot.expressions as exp
 
 from .sqlparser import (
-        Column,
-        SqlParser,
+    Column,
+    SqlParser,
 )
 
 
@@ -27,8 +27,8 @@ class SubquerySelectChecker:
 
     def check(self) -> Optional[str]:
         """
-        Returns warning message if there is nested condition not using any
-        of its own columns, otherwise returns None.
+        Returns warning message if there no column SELECTed in a subquery is not
+        used in that subquery of its own columns, otherwise returns None.
         """
         self._detect_suspicious_nested_conditions()
 
@@ -45,10 +45,10 @@ class SubquerySelectChecker:
 
             warning_header = "Warning: No column in subquery SELECT references its tables [pg4n::SubquerySelect]\n"
             underlined_query = whole_statement[:subquery_start_offset] + \
-                               VT100_UNDERLINE + \
-                               subquery + \
-                               VT100_RESET + \
-                               whole_statement[subquery_end_offset:len(whole_statement)]
+                VT100_UNDERLINE + \
+                subquery + \
+                VT100_RESET + \
+                whole_statement[subquery_end_offset:len(whole_statement)]
 
             warning_msg += warning_header + underlined_query
 
@@ -76,7 +76,8 @@ class SubquerySelectChecker:
                 column_exps = select_expression.find_all(exp.Column)
                 for column_exp in column_exps:
                     column_name = \
-                        SqlParser.get_column_name_from_column_expression(column_exp)
+                        SqlParser.get_column_name_from_column_expression(
+                            column_exp)
                     select_column_names.append(column_name)
 
             if all(filter(lambda x: x not in all_subquery_column_names,

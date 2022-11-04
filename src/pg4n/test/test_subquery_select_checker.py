@@ -7,20 +7,21 @@ import sqlglot
 import sqlglot.expressions as exp
 
 from ..sqlparser import (
-        SqlParser,
-        Column,
-    )
+    SqlParser,
+    Column,
+)
 from ..subquery_select_checker import SubquerySelectChecker
 
 CUSTOMERS_TABLE_NAME = "e29_test_table_customers"
 ORDERS_TABLE_NAME = "e29_test_table_orders"
+
 
 def load_database(**kwargs):
     conn: Connection = psycopg.connect(**kwargs)
 
     with conn.cursor() as cur:
         cur.execute(
-        f"""
+            f"""
         DROP TABLE IF EXISTS {ORDERS_TABLE_NAME};
         DROP TABLE IF EXISTS {CUSTOMERS_TABLE_NAME};
 
@@ -560,7 +561,7 @@ def sql_parser(postgresql: Connection):
 
 def test_check(sql_parser: SqlParser):
     SQL_SUBQUERY_SELECT_EXISTS_SUSPICIOUS = \
-f"""
+        f"""
 SELECT order_id
 FROM  {ORDERS_TABLE_NAME}
 WHERE EXISTS (SELECT order_total_eur
@@ -568,7 +569,7 @@ WHERE EXISTS (SELECT order_total_eur
               WHERE type = 'B');"""
 
     SQL_SUBQUERY_SELECT_IN_SUSPICIOUS = \
-f"""
+        f"""
 SELECT customer_id
 FROM  {CUSTOMERS_TABLE_NAME}
 WHERE customer_id in (SELECT order_id
@@ -576,7 +577,7 @@ WHERE customer_id in (SELECT order_id
                       WHERE order_total_eur > 20);"""
 
     SQL_SUBQUERY_SELECT_WITH_TOPLEVEL_CONDITIONS_SUSPICIOUS = \
-f"""
+        f"""
 SELECT order_id
 FROM  {ORDERS_TABLE_NAME}
 WHERE EXISTS (SELECT order_total_eur
@@ -585,7 +586,7 @@ WHERE EXISTS (SELECT order_total_eur
       order_id > 40;"""
 
     SQL_MULTIPLE_SUBQUERY_SELECTS_SUSPICIOUS = \
-f"""
+        f"""
 SELECT customers_id
 FROM  {CUSTOMERS_TABLE_NAME}
 WHERE (EXISTS (SELECT order_total_eur
@@ -597,16 +598,14 @@ WHERE (EXISTS (SELECT order_total_eur
       order_id > 40;"""
 
     SQL_NO_SUBQUERIES = \
-f"""
+        f"""
 SELECT customer_id
 FROM {CUSTOMERS_TABLE_NAME}
 WHERE type = 'B';"""
 
-
     SQL_NO_CONDITIONS = \
-"""
+        """
 SELECT (1, 2, 3);"""
-
 
     sql_statement = SQL_SUBQUERY_SELECT_EXISTS_SUSPICIOUS
     parsed_sql = sql_parser.parse_one(sql_statement)
