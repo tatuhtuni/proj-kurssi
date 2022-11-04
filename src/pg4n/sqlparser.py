@@ -34,8 +34,9 @@ class SqlParser:
     def parse(self, sql: str) -> list[sqlglot.exp.Expression]:
         """
         Parses all the statements in 'sql'.
-        'sql' should be a string of one or more postgresql statements (delimited by ';').
-        The last ';' in 'sql' is optional.
+
+        'sql' should be a string of one or more postgresql statements
+        (delimited by ';'). The last ';' in 'sql' is optional.
         Throws sqlglot.ParseError on invalid sql.
         """
 
@@ -76,7 +77,7 @@ class SqlParser:
 
         while True:
             new_root = root_node.find_ancestor(exp.Expression)
-            if new_root == None:
+            if new_root is None:
                 break
             root_node = new_root
         return root_node
@@ -100,12 +101,11 @@ class SqlParser:
         return unique_table_names
 
     @staticmethod
-    def get_column_name_from_column_expression(column_expression: exp.Column) -> str:
+    def get_column_name_from_column_expression(
+            column_expression: exp.Column) -> str:
         """
         Returns the column name of column expression ast node.
         """
-        column_name = ""
-
         return column_expression.find(exp.Identifier).this
 
     @staticmethod
@@ -113,16 +113,16 @@ class SqlParser:
         """
         Finds all Predicate nodes inside Where statements from some root node
         (usually the whole parsed output from sqlparser.parse_one()).
-        This function takes care to not introduce any duplicate Predicate's in case of
-        nested Where statements.
+        This function takes care to not introduce any duplicate Predicate's in
+        case of nested Where statements.
         """
         predicates = []
 
         where_statements = root.find_all(exp.Where)
 
         toplevel_where_statements = \
-            list(filter(lambda x: x.find_ancestor(
-                exp.Where) == None, where_statements))
+            list(filter(lambda x: not x.find_ancestor(exp.Where),
+                        where_statements))
 
         for where_statement in toplevel_where_statements:
             for predicate in where_statement.find_all(exp.Predicate):
@@ -149,8 +149,9 @@ class SqlParser:
 
     def _get_column_names(self, table_name: str) -> list[str]:
         """
-        Requires that  'table_name' exists.
-        Extracts columns of the table by running postgres specific metadata query.
+        Requires that 'table_name' exists.
+        Extracts columns of the table by running postgres specific metadata
+        query.
         """
 
         statement =  \
@@ -213,11 +214,12 @@ WHERE
 
         return parseable_type_names
 
-    def _convert_from_internal_types(self, type_names: list[str]) -> list[PostgreSQLDataType]:
+    def _convert_from_internal_types(
+            self, type_names: list[str]) -> list[PostgreSQLDataType]:
         """
         Postgresql has internal type names such as: character or character(x).
-        sqlglot can only parse the types in the form they are declared (atleast in
-        column definitions inside CREATE TABLE) like: CHAR or CHAR(x).
+        sqlglot can only parse the types in the form they are declared (atleast
+        in column definitions inside CREATE TABLE) like: CHAR or CHAR(x).
         This function converts from the internal to the declared form.
         """
 
@@ -236,37 +238,35 @@ WHERE
             elif type_name == "char":
                 converted_types.append(PostgreSQLDataType("CHAR", None, None))
             elif match := character_matcher.match(type_name):
-                converted_types.append(PostgreSQLDataType(f"CHAR({match.group(1)})",
-                                                          int(match.group(1)), None))
+                conv_type = PostgreSQLDataType(f"CHAR({match.group(1)})",
+                                               int(match.group(1)), None)
+                converted_types.append(conv_type)
+
             elif match := varchar_matcher.match(type_name):
-                converted_types.append(PostgreSQLDataType(f"VARCHAR({match.group(1)})",
-                                                          int(match.group(1)), None))
+                conv_type = PostgreSQLDataType(f"VARCHAR({match.group(1)})",
+                                               int(match.group(1)), None)
+                converted_types.append(conv_type)
+
             elif match := numeric_matcher.match(type_name):
                 num_groups = len(match.groups())
                 if num_groups == 1:
-                    converted_types.append(PostgreSQLDataType(f"NUMERIC({match.group(1)})",
-                                                              int(match.group(1)), None))
+                    conv_type = \
+                        PostgreSQLDataType(f"NUMERIC({match.group(1)})",
+                                           int(match.group(1)), None)
+                    converted_types.append(conv_type)
+
                 elif num_groups == 2:
-                    converted_types.append(
-                        PostgreSQLDataType(f"NUMERIC({match.group(1)},{match.group(2)})",
-                                           int(match.group(1)), int(match.group(2))))
+                    name = f"NUMERIC({match.group(1)},{match.group(2)})"
+                    conv_type = PostgreSQLDataType(name, int(match.group(1)),
+                                                   int(match.group(2)))
+                    converted_types.append(conv_type)
                 else:
                     # TODO: proper error handling
-                    print(
-                        f"unrecognized number '{num_groups}' of arguments for numeric() column type", file=sys.stderr)
+                    print(f"unrecognized number '{num_groups}' of arguments for numeric() column type", file=sys.stderr)
                     exit(1)
             else:
                 # TODO: proper error handling
-                print(f"unable to convert from internal type '{type_name}' to declared type",
-                      file=sys.stderr)
+                print(f"unable to convert from internal type '{type_name}' to declared type", file=sys.stderr)
                 exit(1)
 
         return converted_types
-
-    def _run_sql_query(self, sql_query: str) -> list[str]:
-        with self.db_connection.cursor() as cursor:
-            cursor.execute(sql_query)
-            res = cur.fetchall()
-            self.db_connection.rollback()
-
-        return res

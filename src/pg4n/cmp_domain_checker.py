@@ -1,12 +1,9 @@
-import subprocess
-import sys
 import re
 from dataclasses import dataclass
 from typing import Optional
 
 import sqlglot.expressions as exp
 
-from . import sqlparser
 from .sqlparser import SqlParser
 from .sqlparser import Column
 
@@ -14,11 +11,13 @@ from .sqlparser import Column
 VT100_UNDERLINE = "\x1b[4m"
 VT100_RESET = "\x1b[0m"
 
+
 @dataclass(frozen=True)
 class CmpContext:
     expression: exp.Predicate
     a: Column
     b: Column
+
 
 class CmpDomainChecker:
     def __init__(self, parsed_sql: exp.Expression, columns: list[Column]):
@@ -39,11 +38,13 @@ class CmpDomainChecker:
 
     def _are_from_compatible_domains(self, a: Column, b: Column) -> bool:
         """
-        Tests whether the both types a and b are representable by their datatype
+        Tests whether the both types a and b are representable by their
+        datatype.
         """
 
-        # First we must extract the base type without possible trailing precission or digit
-        # counts (which can be retrieved from the Column.type directly).
+        # First we must extract the base type without possible trailing
+        # precission or digit counts (which can be retrieved from the
+        # Column.type directly).
         type_start_matcher = re.compile(r'^([a-zA-Z]+).*$')
         match_a = type_start_matcher.match(a.type.name)
         match_b = type_start_matcher.match(b.type.name)
@@ -61,27 +62,30 @@ class CmpDomainChecker:
         if type_start_a != type_start_b:
             return True
 
-        if a.type.digits == None and b.type.digits == None:
+        if a.type.digits is None and b.type.digits is None:
             return True
-        elif ((a.type.digits == None and b.type.digits != None) or
-              (a.type.digits != None and b.type.digits == None)):
+        elif ((a.type.digits is None and b.type.digits is not None) or
+              (a.type.digits is not None and b.type.digits is None)):
             return False
 
         if a.type.digits != b.type.digits:
             return False
         else:
-            if a.type.precision == None and b.type.precision == None:
+            if a.type.precision is None and b.type.precision is None:
                 return True
-            elif ((a.type.precision == None and b.type.precision != None) or
-                  (a.type.precision != None and b.type.precision == None)):
+            elif ((a.type.precision is None and
+                   b.type.precision is not None) or
+                  (a.type.precision is not None and
+                   b.type.precision is None)):
                 return False
 
         return True
 
-    def _detect_suspicious_cmp(self, cmp: exp.Predicate, columns: list[Column]):
+    def _detect_suspicious_cmp(self, cmp: exp.Predicate,
+                               columns: list[Column]):
         """
-        Detects whether 'cmp' has comparison between columns from different domains
-        e.g. a: VARCHAR(10) < b: VARCHAR(50)
+        Detects whether 'cmp' has comparison between columns from different
+        domains (e.g. a: VARCHAR(10) < b: VARCHAR(50)).
 
         Only works for comparisons between 2 variables. In other words, if
         any operand in the comparison is literal this function returns False.
@@ -108,14 +112,15 @@ class CmpDomainChecker:
 
         for cmp_column_name in cmp_column_names:
             tmp = _find_column(cmp_column_name, columns)
-            if tmp != None:
+            if tmp is not None:
                 cmp_columns.append(tmp)
 
         # This the comparisons has atleast 1 literal
         if len(cmp_columns) < 2:
             return False
 
-        if not self._are_from_compatible_domains(cmp_columns[0], cmp_columns[1]):
+        if not self._are_from_compatible_domains(cmp_columns[0],
+                                                 cmp_columns[1]):
             cmp_context = CmpContext(cmp, cmp_columns[0], cmp_columns[1])
             self.suspicious_cmp_contexts.append(cmp_context)
 
@@ -133,8 +138,9 @@ class CmpDomainChecker:
         if len(self.suspicious_cmp_contexts) == 0:
             return
 
-        for i, suspicious_cmp_context in enumerate(self.suspicious_cmp_contexts):
-            if self.warning_msg == None:
+        for i, suspicious_cmp_context in \
+                enumerate(self.suspicious_cmp_contexts):
+            if self.warning_msg is None:
                 self.warning_msg = ""
             whole_statement = str(select_statement)
 
@@ -147,21 +153,22 @@ class CmpDomainChecker:
             # It does not matter which column's ancestor Where expression we
             # find because both necessarily have the same.
             containing_where = str(cmp_exp.find_ancestor(exp.Where))
-            containing_where_start_offset = whole_statement.find(containing_where)
-            containing_where_end_offset = containing_where_start_offset + \
-                                          len(containing_where)
+            containing_where_start_offset = \
+                whole_statement.find(containing_where)
 
             cmp_start_offset = containing_where.find(str(cmp_exp))
             cmp_end_offset = cmp_start_offset + len(str(cmp_exp))
 
-            total_start_offset = containing_where_start_offset + cmp_start_offset
+            total_start_offset = \
+                containing_where_start_offset + cmp_start_offset
             total_end_offset = containing_where_start_offset + cmp_end_offset
 
-            underlined_query = whole_statement[:total_start_offset] + \
-                               VT100_UNDERLINE + \
-                               whole_statement[total_start_offset:total_end_offset] + \
-                               VT100_RESET + \
-                               whole_statement[total_end_offset:len(whole_statement)]
+            underlined_query = \
+                whole_statement[:total_start_offset] + \
+                VT100_UNDERLINE + \
+                whole_statement[total_start_offset:total_end_offset] + \
+                VT100_RESET + \
+                whole_statement[total_end_offset:len(whole_statement)]
 
             self.warning_msg = self.warning_msg + msg_header + underlined_query
             if i != len(self.suspicious_cmp_contexts) - 1:

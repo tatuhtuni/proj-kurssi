@@ -15,12 +15,13 @@ from ..cmp_domain_checker import CmpDomainChecker
 CUSTOMERS_TABLE_NAME = "e31_test_table_customers"
 ORDERS_TABLE_NAME = "e31_test_table_orders"
 
+
 def load_database(**kwargs):
     conn: Connection = psycopg.connect(**kwargs)
 
     with conn.cursor() as cur:
         cur.execute(
-        f"""
+            f"""
         DROP TABLE IF EXISTS {ORDERS_TABLE_NAME};
         DROP TABLE IF EXISTS {CUSTOMERS_TABLE_NAME};
 
@@ -561,13 +562,13 @@ def sql_parser(postgresql: Connection):
 def test_check(sql_parser: SqlParser):
 
     SQL_VARCHAR_SUSPICIOUS = \
-f"""
+        f"""
 SELECT customer_id
 FROM {CUSTOMERS_TABLE_NAME}
 WHERE fname > nickname;"""
 
     SQL_MULTI_VARCHAR_SUSPICIOUS = \
-f"""
+        f"""
 SELECT customer_id
 FROM {CUSTOMERS_TABLE_NAME}
 WHERE fname > nickname AND
@@ -575,20 +576,20 @@ WHERE fname > nickname AND
       customer_id = customer_id;"""
 
     SQL_INT_VARCHAR_VALID = \
-f"""
+        f"""
 SELECT customer_id
 FROM {CUSTOMERS_TABLE_NAME}
 WHERE fname > customer_id;"""
 
     SQL_MULTI_CMP_VALID = \
-f"""
+        f"""
 SELECT *
 FROM {ORDERS_TABLE_NAME}
 WHERE (order_total_eur = order_total_eur) OR
       (order_total_eur = 0 AND order_total_eur = 100);"""
 
     SQL_NESTED_WHERE_VALID = \
-f"""
+        f"""
 SELECT *
 FROM {ORDERS_TABLE_NAME}
 WHERE (order_total_eur = order_total_eur) AND
@@ -597,7 +598,7 @@ WHERE (order_total_eur = order_total_eur) AND
                        WHERE c.type = 'B');"""
 
     SQL_NESTED_WHERE_SUSPICIOUS = \
-f"""
+        f"""
 SELECT *
 FROM {ORDERS_TABLE_NAME}
 WHERE (order_total_eur = order_total_eur) AND
@@ -609,46 +610,46 @@ WHERE (order_total_eur = order_total_eur) AND
     parsed_sql = sql_parser.parse_one(sql_statement)
     columns = sql_parser.get_query_columns(parsed_sql)
     checker = CmpDomainChecker(parsed_sql, columns)
-    assert checker != None
+    assert checker is not None
     warning_msg = checker.check()
-    assert warning_msg != None
+    assert warning_msg is not None
 
     sql_statement = SQL_MULTI_VARCHAR_SUSPICIOUS
     parsed_sql = sql_parser.parse_one(sql_statement)
     columns = sql_parser.get_query_columns(parsed_sql)
     checker = CmpDomainChecker(parsed_sql, columns)
-    assert checker != None
+    assert checker is not None
     warning_msg = checker.check()
-    assert warning_msg != None
+    assert warning_msg is not None
 
     sql_statement = SQL_INT_VARCHAR_VALID
     parsed_sql = sql_parser.parse_one(sql_statement)
     columns = sql_parser.get_query_columns(parsed_sql)
     checker = CmpDomainChecker(parsed_sql, columns)
-    assert checker != None
+    assert checker is not None
     warning_msg = checker.check()
-    assert warning_msg == None
+    assert warning_msg is None
 
     sql_statement = SQL_MULTI_CMP_VALID
     parsed_sql = sql_parser.parse_one(sql_statement)
     columns = sql_parser.get_query_columns(parsed_sql)
     checker = CmpDomainChecker(parsed_sql, columns)
-    assert checker != None
+    assert checker is not None
     warning_msg = checker.check()
-    assert warning_msg == None
+    assert warning_msg is None
 
     sql_statement = SQL_NESTED_WHERE_VALID
     parsed_sql = sql_parser.parse_one(sql_statement)
     columns = sql_parser.get_query_columns(parsed_sql)
     checker = CmpDomainChecker(parsed_sql, columns)
-    assert checker != None
+    assert checker is not None
     warning_msg = checker.check()
-    assert warning_msg == None
+    assert warning_msg is None
 
     sql_statement = SQL_NESTED_WHERE_SUSPICIOUS
     parsed_sql = sql_parser.parse_one(sql_statement)
     columns = sql_parser.get_query_columns(parsed_sql)
     checker = CmpDomainChecker(parsed_sql, columns)
-    assert checker != None
+    assert checker is not None
     warning_msg = checker.check()
-    assert warning_msg != None
+    assert warning_msg is not None
