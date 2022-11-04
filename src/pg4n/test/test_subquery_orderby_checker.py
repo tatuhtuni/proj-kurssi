@@ -11,11 +11,13 @@ CUSTOMERS_TABLE_NAME = "inner_orderby_test_table_customers"
 ORDERS_TABLE_NAME = "inner_orderby_test_table_orders"
 
 # Does not matter all only here so we can get a connection
+
+
 def load_database(**kwargs):
     conn: Connection = psycopg.connect(**kwargs)
     with conn.cursor() as cur:
         cur.execute(
-        f"""
+            f"""
         DROP TABLE IF EXISTS {ORDERS_TABLE_NAME};
         DROP TABLE IF EXISTS {CUSTOMERS_TABLE_NAME};
 
@@ -541,6 +543,7 @@ def load_database(**kwargs):
         insert into {ORDERS_TABLE_NAME} (order_id, order_total_eur, customer_id) values (250, 367.56, 214);""")
         conn.commit()
 
+
 factory = factories.postgresql_proc(
     load=[load_database],
 )
@@ -551,13 +554,15 @@ postgresql = factories.postgresql("factory")
 def sql_parser(postgresql: Connection):
     return SqlParser(db_connection=postgresql)
 
+
 @pytest.fixture
 def qep_parser(postgresql: Connection):
     return QEPParser(conn=postgresql)
 
+
 def test_inner_orderby(sql_parser: SqlParser, qep_parser: QEPParser):
     SQL_WITHOUT_OUTER_ORDER = \
-f"""
+        f"""
 SELECT *
 FROM {CUSTOMERS_TABLE_NAME} c
 WHERE EXISTS (SELECT *
@@ -566,7 +571,7 @@ WHERE EXISTS (SELECT *
               ORDER BY o.customer_id);"""
 
     SQL_OUTER_ORDER_WITHOUT_INNER_ORDER = \
-f"""
+        f"""
 SELECT *
 FROM {CUSTOMERS_TABLE_NAME} c
 WHERE EXISTS (SELECT *
@@ -575,7 +580,7 @@ WHERE EXISTS (SELECT *
 ORDER BY c.customer_id;"""
 
     SQL_OUTER_ORDER_WITH_INNER_ORDER = \
-f"""
+        f"""
 SELECT *
 FROM {CUSTOMERS_TABLE_NAME} c
 WHERE EXISTS (SELECT *
@@ -585,7 +590,7 @@ WHERE EXISTS (SELECT *
 ORDER BY c.customer_id;"""
 
     SQL_MULTIPLE_INNER_ORDERS = \
-f"""
+        f"""
 SELECT *
 FROM {CUSTOMERS_TABLE_NAME} c
 WHERE EXISTS (SELECT *
@@ -598,7 +603,7 @@ WHERE EXISTS (SELECT *
               ORDER BY o.customer_id);"""
 
     SQL_NESTED_SUBQUERY_INNER_ORDER = \
-f"""
+        f"""
 SELECT *
 FROM {CUSTOMERS_TABLE_NAME} c
 WHERE EXISTS (SELECT *

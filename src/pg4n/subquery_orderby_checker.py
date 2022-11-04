@@ -6,6 +6,7 @@ import sqlglot.expressions as exp
 
 from . qepparser import QEPAnalysis
 
+
 class SubqueryOrderByChecker:
     def __init__(self, parsed_sql: exp.Expression, qep_analysis: QEPAnalysis):
         self.parsed_sql: exp.Expression = parsed_sql
@@ -23,7 +24,8 @@ class SubqueryOrderByChecker:
         #       warnings than postgresql.
 
         has_orderby = self.parsed_sql.find(exp.Order) != None
-        has_sort_node = len(self.qep_analysis.root.rfindval("Node Type", "Sort")) > 0;
+        has_sort_node = len(
+            self.qep_analysis.root.rfindval("Node Type", "Sort")) > 0
         has_inner_orderby = has_orderby and not has_sort_node
 
         if not has_inner_orderby:
