@@ -14,6 +14,5 @@ jobs:
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           path: grade.txt
-          recreate: true
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_SECRET }}
