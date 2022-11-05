@@ -64,5 +64,7 @@ Note that the GitHub Pages site is only updated on pushes to `main` branch.
 For linting, you need the CI tools: `poetry install --with=ci`. The tools used are:
 - `black` for formatting
 - `pylint` for linting
+- `mypy` for static type checking
+- `isort` for sorting imports
 
 To get a grade that the CI/CD pipeline would give you, you can do `poetry run scripts/ci-grade.sh` to run all the checks. The output is possibly long, so pipe it to a file perusal filter such as `less` to scroll through it and search for things of concern, e.g., `summary` to see scores.

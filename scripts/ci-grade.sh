@@ -7,14 +7,15 @@
 blackurl="[black](https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html#diffs)"
 pylinturl="[pylint](https://pylint.pycqa.org/en/latest/user_guide/usage/output.html#source-code-analysis-section)"
 mypyurl="[mypy](https://mypy.readthedocs.io/en/stable/error_codes.html#error-codes)"
-echo "ℹ Format info: $blackurl • $pylinturl • $mypyurl"
+isorturl="[isort](https://pycqa.github.io/isort/)"
+echo "ℹ Tool info: $blackurl • $pylinturl • $mypyurl • $isorturl"
 
 #
-# print black result
+# black
 #
 
 blackres=$(black src --diff -q)
-echo "<details><summary>black diff: \
+echo "<details><summary>black: \
 -$(grep -cP '^-(?!-)' <<<"$blackres") \
 +$(grep -cP '^\+(?!\+)' <<<"$blackres")</summary>
 
@@ -24,7 +25,7 @@ $blackres
 </details>"
 
 #
-# print pylint result
+# pylint
 #
 
 lintres=$(pylint src --exit-zero -sn)
@@ -33,7 +34,7 @@ lintscore=$(for x in I R C W E F; do
     [ $n != 0 ] && echo $n$x
 done)
 [ "$lintscore" = "" ] && lintscore="OK"
-echo "<details><summary>pylint score: "$lintscore"</summary>
+echo "<details><summary>pylint: "$lintscore"</summary>
 
 \`\`\`diff
 $(sed -E -e '/\.py:[:0-9]+\s+[CEF]/s/^/- /' \
@@ -43,7 +44,7 @@ $(sed -E -e '/\.py:[:0-9]+\s+[CEF]/s/^/- /' \
 </details>"
 
 #
-# print mypy result
+# mypy
 #
 
 mypyres=$(mypy --non-interactive --install-types --ignore-missing-imports --strict --show-error-codes --show-error-context src 2>&1)
@@ -52,5 +53,19 @@ echo "<details><summary>mypy: $(sed -nr 's/^Found (.+)/\1/p' <<<"$mypyres")\
 
 \`\`\`diff
 $(sed -r -e '/^src\//! d' -e 's/^[^ ]+ error/- &/' -e 's/^[^-]/# &/' <<<"$mypyres")
+\`\`\`
+</details>"
+
+#
+# isort
+#
+
+isortres=$(isort src --diff --profile black)
+echo "<details><summary>isort: \
+-$(grep -cP '^-(?!-)' <<<"$isortres") \
++$(grep -cP '^\+(?!\+)' <<<"$isortres")</summary>
+
+\`\`\`diff
+$isortres
 \`\`\`
 </details>"

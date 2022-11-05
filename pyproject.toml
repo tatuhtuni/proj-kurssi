@@ -32,8 +32,7 @@ sphinx-rtd-theme = "^1.0.0"
 autopep8 = "^1.7.0"
 
 [tool.poetry.group.ci.dependencies]
-# mypy = "^0.982"
 pylint = "^2.15.4"
 black = "^22.10.0"
-# isort = "^5.10.1"
 mypy = "^0.982"
+isort = "^5.10.1"
