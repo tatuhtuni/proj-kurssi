@@ -44,7 +44,8 @@ postgresql_in_docker = factories.postgresql_noproc(
     host=getenv("PGHOST", "127.0.0.1"),
     port=getenv("PGPORT", 5432),
     user=getenv("PGUSER", "postgres"),
-    password=getenv("PGPASSWORD"))
+    password=getenv("PGPASSWORD"),
+    dbname=getenv("PGDBNAME", "postgres"))
 postgresql = factories.postgresql("postgresql_in_docker")
 
 
@@ -124,7 +125,8 @@ def test_qep_structure(parser: qepparser.QEPParser):
     assert qep.plan["Relation Name"] == "users"
     assert qep.plan["Alias"] == "users"
     assert qep.plan["Actual Rows"] == 2
-    
+
+
 def test_qep_find(parser: qepparser.QEPParser):
     """Test that the QEP find method works as expected."""
 
@@ -133,36 +135,37 @@ def test_qep_find(parser: qepparser.QEPParser):
     assert qep.root.findval("Relation Name", "stories") == [qep.plan]
     assert qep.root.findval("Alias", "stories") == [qep.plan]
     assert qep.root.findval("Actual Rows", 2) == [qep.plan]
-    
+
     qep = parser("select * from users")
     assert qep.root.findval("Node Type", "Seq Scan") == [qep.plan]
     assert qep.root.findval("Relation Name", "users") == [qep.plan]
     assert qep.root.findval("Alias", "users") == [qep.plan]
     assert qep.root.findval("Actual Rows", 2) == [qep.plan]
-    
+
     qep = parser("select * from comments")
     assert qep.root.findval("Node Type", "Seq Scan") == [qep.plan]
     assert qep.root.findval("Relation Name", "comments") == [qep.plan]
     assert qep.root.findval("Alias", "comments") == [qep.plan]
     assert qep.root.findval("Actual Rows", 4) == [qep.plan]
-    
+
     qep = parser("select * from stories where id = 1")
     assert qep.root.findval("Node Type", "Index Scan") == [qep.plan]
     assert qep.root.findval("Relation Name", "stories") == [qep.plan]
     assert qep.root.findval("Alias", "stories") == [qep.plan]
     assert qep.root.findval("Actual Rows", 1) == [qep.plan]
-    
+
     qep = parser("select * from users where id = 1")
     assert qep.root.findval("Node Type", "Index Scan") == [qep.plan]
     assert qep.root.findval("Relation Name", "users") == [qep.plan]
     assert qep.root.findval("Alias", "users") == [qep.plan]
     assert qep.root.findval("Actual Rows", 1) == [qep.plan]
-    
+
     qep = parser("select * from comments where id = 1")
     assert qep.root.findval("Node Type", "Index Scan") == [qep.plan]
     assert qep.root.findval("Relation Name", "comments") == [qep.plan]
     assert qep.root.findval("Alias", "comments") == [qep.plan]
     assert qep.root.findval("Actual Rows", 1) == [qep.plan]
+
 
 def test_gep_rfind(parser: qepparser.QEPParser):
     """Test that the QEP rfind (recursive find) method works as expected."""
@@ -171,12 +174,12 @@ def test_gep_rfind(parser: qepparser.QEPParser):
     assert len(qep.root.rfindval("Node Type", "Bitmap Heap Scan")) == 1
     assert len(qep.root.rfindval("Node Type", "BitmapOr")) == 2
     assert len(qep.root.rfindval("Node Type", "Bitmap Index Scan")) == 4
-    
+
     qep = parser("select * from stories where id = 1 or id = 2")
     assert len(qep.root.rfindval("Node Type", "Bitmap Heap Scan")) == 1
     assert len(qep.root.rfindval("Node Type", "BitmapOr")) == 2
     assert len(qep.root.rfindval("Node Type", "Bitmap Index Scan")) == 4
-    
+
     qep = parser("select * from comments where id = 1 or id = 2")
     assert len(qep.root.rfindval("Node Type", "Bitmap Heap Scan")) == 1
     assert len(qep.root.rfindval("Node Type", "BitmapOr")) == 2

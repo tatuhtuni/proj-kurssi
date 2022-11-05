@@ -45,7 +45,7 @@ class QEPNode:
 
     def __init__(self, node_: node):
         """Create a new QEPNode.
-        
+
         :param node_: the node to wrap"""
         self._node = node_
 
@@ -59,9 +59,9 @@ class QEPNode:
 
     def __getitem__(self, key: int) -> "QEPNode":
         """Get the child node at the given index.
-        
+
         :param key: the index of the child node to get
-        
+
         :returns: the child node at the given index
         """
         return QEPNode(self._node["Plans"][key])
@@ -82,48 +82,48 @@ class QEPNode:
         """A list of the node's children."""
         return self._node.get("Plans", [])
 
-    def find(self, pred: Callable[[node], bool],
+    def find(self, pr: Callable[[node], bool],
              recursive=False) -> list[node]:
         """Finds nodes matching the predicate.
-        
-        :param pred: a function that takes a node and returns True if it matches
+
+        :param pr: a function that takes a node and returns True if it matches
         :param recursive: if True, search recursively, otherwise only search
             this+children
-        
+
         :returns: a list of matching nodes
         """
         if recursive:
-            return self.find(pred) + \
-                list(chain.from_iterable(x.find(pred, True) for x in iter(self)))
-        return list(filter(pred, chain((self._node,), self.plans)))
+            return self.find(pr) + \
+                list(chain.from_iterable(x.find(pr, True) for x in iter(self)))
+        return list(filter(pr, chain((self._node,), self.plans)))
 
     def rfind(self, pred: Callable[[node], bool]) -> list[node]:
         """Finds nodes matching the predicate, recursively.
-        
+
         :param pred: a function that takes a node and returns True if it matches
-        
+
         :returns: a list of matching nodes
         """
         return self.find(pred, recursive=True)
-        
+
     def findval(self, key: str, val: object, recursive=False) -> list[node]:
         """Finds nodes with the given key and value.
-        
+
         :param key: the key to search for
         :param val: the value to search for
         :param recursive: if True, search recursively, otherwise only search
             this+children
-        
+
         :returns: a list of matching nodes
         """
         return self.find(lambda x: x.get(key) == val, recursive)
-        
+
     def rfindval(self, key: str, val: object) -> list[node]:
         """Finds nodes with the given key and value, recursively.
-        
+
         :param key: the key to search for
         :param val: the value to search for
-        
+
         :returns: a list of matching nodes
         """
         return self.findval(key, val, recursive=True)
@@ -184,7 +184,8 @@ class QEPParser:
         Returns:
             A dictionary representing the query execution plan.
         """
-        stmt = f"explain (format json, analyze, verbose) {stmt.strip().rstrip(';')};"
+        stmt = "explain (format json, analyze, verbose)" + \
+            stmt.strip().rstrip(';') + ";"
         with self._conn.cursor() as cur:
             cur.execute(stmt, *args, **kwargs)
             res = cur.fetchall()
