@@ -45,7 +45,7 @@ postgresql_in_docker = factories.postgresql_noproc(
     port=getenv("PGPORT", 5432),
     user=getenv("PGUSER", "postgres"),
     password=getenv("PGPASSWORD"),
-    dbname=getenv("PGDBNAME", "postgres"))
+    dbname=getenv("PGDBNAME", "test_database"))
 postgresql = factories.postgresql("postgresql_in_docker")
 
 

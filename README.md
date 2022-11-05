@@ -24,13 +24,13 @@ Having PostgreSQL running on port 5432, do `poetry run pytest`.
 
 You may need to provide environment variables that match your config:
 
-| Variable     | Default value | Description                                             |
-| ------------ | ------------- | ------------------------------------------------------- |
-| `PGHOST`     | `127.0.0.1`   | Hostname of the PostgreSQL server.                      |
-| `PGPORT`     | `5432`        | Port to an active PostgreSQL instance.                  |
-| `PGUSER`     | `postgres`    | The user that will be used to manage the test database. |
-| `PGPASSWORD` |               | Password, in case password authentication is used.      |
-| `PGDBNAME`   | `postgres`    | Database name.                                          |
+| Variable     | Default value   | Description                                             |
+| ------------ | --------------- | ------------------------------------------------------- |
+| `PGHOST`     | `127.0.0.1`     | Hostname of the PostgreSQL server.                      |
+| `PGPORT`     | `5432`          | Port to an active PostgreSQL instance.                  |
+| `PGUSER`     | `postgres`      | The user that will be used to manage the test database. |
+| `PGPASSWORD` |                 | Password, in case password authentication is used.      |
+| `PGDBNAME`   | `test_database` | Database name.                                          |
  
 For example, if PostgreSQL is on port 5433, just do `PGPORT=5433 poetry run pytest` (Bash syntax).
 
