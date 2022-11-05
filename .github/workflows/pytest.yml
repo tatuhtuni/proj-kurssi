@@ -26,18 +26,3 @@ jobs:
           PGHOST: localhost
           PGUSER: postgres
           PGPASSWORD: postgres
-
-      - run: |
-          poetry run sphinx-apidoc -q -f -o docs/api src/pg4n '*/test*' && \
-          poetry run sphinx-build -q -b html docs docs/build && \
-          touch docs/build/.nojekyll
-        if: github.ref == 'refs/heads/main'
-
-      - uses: JamesIves/github-pages-deploy-action@v4
-        if: github.ref == 'refs/heads/main'
-        with:
-          token: ${{ secrets.BOT_SECRET }}
-          repository-name: Project-C-SQL/Project-C-SQL.github.io
-          folder: docs/build
-          git-config-name: github-actions
-          git-config-email: <>
