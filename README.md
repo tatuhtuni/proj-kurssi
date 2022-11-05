@@ -1,6 +1,17 @@
-# PostgreSQL for novices
+# PostgreSQL for novices
 
-[Documentation](https://project-c-sql.github.io/)
+[📄 Documentation](https://project-c-sql.github.io/)
+
+This README is meant for developers of the project, and not for end users. For end users, please see the documentation linked above.
+
+- [PostgreSQL for novices](#postgresql-for-novices)
+  - [Notes for developers](#notes-for-developers)
+    - [Poetry](#poetry)
+    - [Imports](#imports)
+    - [Running tests](#running-tests)
+      - [Using docker](#using-docker)
+    - [Building documents](#building-documents)
+    - [Linting](#linting)
 
 ## Notes for developers
 
@@ -48,17 +59,10 @@ You'll need to tell pytest the password: `PGPASSWORD=postgres poetry run pytest`
 
 Note that the GitHub Pages site is only updated on pushes to `main` branch.
 
-<!-- TODO: generate appropriately scoped access token so a bot can comment lint results
 ### Linting
 
-For linting, you need the CI tools: `poetry install -with ci`.
+For linting, you need the CI tools: `poetry install --with=ci`. The tools used are:
+- `black` for formatting
+- `pylint` for linting
 
-Running all linters:
-```
-poetry run '
-mypy src --show-error-codes --show-error-context --pretty &&
-black src --check &&
-isort "src"/**/*.py -m 3 --trailing-comma -c &&
-pylint src'
-```
--->
+To get a grade that the CI/CD pipeline would give you, you can do `poetry run scripts/ci-grade.sh` to run all the checks. The output is possibly long, so pipe it to a file perusal filter such as `less` to scroll through it and search for things of concern, e.g., `summary` to see scores.
