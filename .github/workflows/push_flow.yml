@@ -28,12 +28,6 @@ jobs:
           PGPASSWORD: postgres
 
       - run: |
-          poetry run -- bash -c 'echo a && mypy src --show-error-codes --show-error-context --no-error-summary;
-          echo b && black src --check;
-          echo c && isort "src"/**/*.py -m 3 --trailing-comma -c;
-          echo d && pylint src --exit-zero'
-
-      - run: |
           poetry run sphinx-apidoc -q -f -o docs/api src/pg4n '*/test*' && \
           poetry run sphinx-build -q -b html docs docs/build && \
           touch docs/build/.nojekyll

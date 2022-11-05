@@ -46,8 +46,8 @@ $(sed -E -e '/\.py:[:0-9]+\s+[CEF]/s/^/- /' \
 # print mypy result
 #
 
-mypyres=$(mypy --non-interactive --install-types --ignore-missing-imports --strict --show-error-codes src 2>&1)
-echo "<details><summary>mypy errors: $(sed -nr 's/^Found ([0-9]+) errors.*/\1 error(s)/p' <<<"$mypyres")\
+mypyres=$(mypy --non-interactive --install-types --ignore-missing-imports --strict --show-error-codes --show-error-context src 2>&1)
+echo "<details><summary>mypy: $(sed -nr 's/^Found (.+)/\1/p' <<<"$mypyres")\
 </summary>
 
 \`\`\`diff
