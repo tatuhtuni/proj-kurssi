@@ -14,8 +14,9 @@ echo "ℹ Tool info: $blackurl • $pylinturl • $mypyurl • $isorturl"
 # black
 #
 
-blackres=$(black src --diff -q)
-echo "<details><summary>black: \
+runblack() {
+    blackres=$(black src --diff -q)
+    echo "<details><summary>black: \
 -$(grep -cP '^-(?!-)' <<<"$blackres") \
 +$(grep -cP '^\+(?!\+)' <<<"$blackres")</summary>
 
@@ -23,45 +24,51 @@ echo "<details><summary>black: \
 $blackres
 \`\`\`
 </details>"
+}
 
 #
 # pylint
 #
 
-lintres=$(pylint src --exit-zero -sn)
-lintscore=$(for x in I R C W E F; do
-    n=$(echo "$lintres" | grep -cP '^\S+\s+'$x)
-    [ $n != 0 ] && echo $n$x
-done)
-[ "$lintscore" = "" ] && lintscore="OK"
-echo "<details><summary>pylint: "$lintscore"</summary>
+runpylint() {
+    lintres=$(pylint src --exit-zero -sn)
+    lintscore=$(for x in I R C W E F; do
+        n=$(echo "$lintres" | grep -cP '^\S+\s+'$x)
+        [ $n != 0 ] && echo $n$x
+    done)
+    [ "$lintscore" = "" ] && lintscore="OK"
+    echo "<details><summary>pylint: "$lintscore"</summary>
 
 \`\`\`diff
 $(sed -E -e '/\.py:[:0-9]+\s+[CEF]/s/^/- /' \
-    -e '/\.py:[:0-9]+\s+W/s/^/! /' \
-    -e '/^([-!*])/! s/^/# /' <<<"$lintres")
+        -e '/\.py:[:0-9]+\s+W/s/^/! /' \
+        -e '/^([-!*])/! s/^/# /' <<<"$lintres")
 \`\`\`
 </details>"
+}
 
 #
 # mypy
 #
 
-mypyres=$(mypy --non-interactive --install-types --ignore-missing-imports --strict --show-error-codes --show-error-context src 2>&1)
-echo "<details><summary>mypy: $(sed -nr 's/^Found (.+)/\1/p' <<<"$mypyres")\
+runmypy() {
+    mypyres=$(mypy --non-interactive --install-types --ignore-missing-imports --strict --show-error-codes --show-error-context src 2>&1)
+    echo "<details><summary>mypy: $(sed -nr 's/^Found (.+)/\1/p' <<<"$mypyres")\
 </summary>
 
 \`\`\`diff
 $(sed -r -e '/^src\//! d' -e 's/^[^ ]+ error/- &/' -e 's/^[^-]/# &/' <<<"$mypyres")
 \`\`\`
 </details>"
+}
 
 #
 # isort
 #
 
-isortres=$(isort src --diff --profile black)
-echo "<details><summary>isort: \
+runisort() {
+    isortres=$(isort src --diff --profile black)
+    echo "<details><summary>isort: \
 -$(grep -cP '^-(?!-)' <<<"$isortres") \
 +$(grep -cP '^\+(?!\+)' <<<"$isortres")</summary>
 
@@ -69,3 +76,7 @@ echo "<details><summary>isort: \
 $isortres
 \`\`\`
 </details>"
+}
+
+# run them in parallel
+cat <(runblack) <(runpylint) <(runmypy) <(runisort)
