@@ -2,7 +2,7 @@
 
 blackurl="[black](https://black.readthedocs.io/en/stable/usage_and_configuration/the_basics.html#diffs)"
 pylinturl="[pylint](https://pylint.pycqa.org/en/latest/user_guide/usage/output.html#source-code-analysis-section)"
-echo "ℹ Format info: $black • $pylinturl"
+echo "ℹ Format info: $blackurl • $pylinturl"
 
 blackres=$(black src --diff -q)
 echo "<details><summary>black diff: -$(echo "$blackres" | grep -cP '^-(?!-)') +$(echo "$blackres" | grep -cP '^\+(?!\+)')</summary>
