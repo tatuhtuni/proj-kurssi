@@ -35,5 +35,5 @@ class SemanticRouter:
             analysis_result = CmpDomainChecker(sanitized_sql, columns).check()
 
             if analysis_result is not None:
-                return "" # str(analysis_result)
-        return "none found"  # No semantic errors found
+                return analysis_result
+        return ""  # No semantic errors found
