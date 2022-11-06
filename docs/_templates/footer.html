@@ -1,0 +1,9 @@
+{% extends "!footer.html" %}
+{% block extrafooter %}
+    {{super}}
+    <div class="footer" style="float:right">
+        <a href="https://github.com/Project-C-SQL/postgresql-for-novices">
+          <img src="{{ pathto('_static/github-mark.svg', 1) }}" loading="lazy" decoding="async" alt="GitHub mark" width="20" height="20">
+        </a>
+      </div>
+{% endblock %}
