@@ -1,4 +1,4 @@
 # Program architecture
 
 This psql output analysis program is built around three essential modules:
-* [Psql wrapper interface](psql-wrapper)
+* [Psql wrapper interface](./interfaces.md#psqlwrapper)

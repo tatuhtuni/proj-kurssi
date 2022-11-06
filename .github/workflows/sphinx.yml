@@ -1,0 +1,25 @@
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  push_flow:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ./.github/actions/install
+
+      - run: |
+          poetry run sphinx-apidoc -q -f -o docs/api src/pg4n '*/test*' && \
+          poetry run sphinx-build -q -b html docs docs/build && \
+          touch docs/build/.nojekyll
+
+      - uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          token: ${{ secrets.BOT_SECRET }}
+          repository-name: Project-C-SQL/Project-C-SQL.github.io
+          folder: docs/build
+          git-config-name: github-actions
+          git-config-email: <>
