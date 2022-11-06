@@ -1,4 +1,4 @@
-def main():
+def main() -> None:
     import os
     import sys
     from functools import reduce
