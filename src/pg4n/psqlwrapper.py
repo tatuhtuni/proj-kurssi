@@ -20,12 +20,6 @@ class PsqlWrapper:
 
     debug: bool = False
 
-    input_log: bytes = b''
-    output_log: bytes = b''
-    db_name: bytes = b''
-    analyze: Callable[[str], str]
-    parser: PsqlParser
-
     def __init__(self, db_name_parameter: bytes,
                  hook_f: Callable[[str], str], parser: PsqlParser):
         """Build wrapper for selected database.
@@ -35,9 +29,9 @@ class PsqlWrapper:
         to and from which semantic error messages are received in return.
         :param parser: A parser that implements the required parsing functions.
         """
-        self.db_name = db_name_parameter
-        self.analyze = hook_f
-        self.parser = parser
+        self.db_name: bytes = db_name_parameter
+        self.analyze: Callable[[str], str] = hook_f
+        self.parser: PsqlParser = parser
 
         # shutil.get_terminal_size()
         (self.cols, self.rows) = get_terminal_size()
