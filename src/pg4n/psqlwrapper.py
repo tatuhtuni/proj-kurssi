@@ -132,8 +132,9 @@ class PsqlWrapper:
         split_prompt: List[str] = \
             self.parser.parse_new_prompt_and_rest(
                 bytes.decode(prompt, "utf-8"))
+        print_msg = self.pg4n_message.replace("\n", "\r\n")
         return bytes(split_prompt[0] + "\r\n" +
-                     self.pg4n_message + "\r\n\r\n" +
+                     print_msg + "\r\n\r\n" +
                      split_prompt[1],
                      "utf-8")
 
