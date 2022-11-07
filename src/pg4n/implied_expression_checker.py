@@ -13,6 +13,7 @@ from .qepparser import (
     QEPNode,
 )
 
+
 class ImpliedExpressionChecker:
     def __init__(self, parsed_sql: exp.Expression, sql_statement: str,
                  db_connection: Connection):
@@ -29,16 +30,16 @@ class ImpliedExpressionChecker:
             return node.get("One-Time Filter") != None
 
         qep_parser_with_constraint_exclusion = \
-                QEPParser(conn=self.db_connection, constraint_exclusion=True)
+            QEPParser(conn=self.db_connection, constraint_exclusion=True)
         qep_analysis_with_constraint_exclusion = \
-                qep_parser_with_constraint_exclusion.parse(self.sql_statement)
+            qep_parser_with_constraint_exclusion.parse(self.sql_statement)
         has_onetime_filter_with_constraint_exclusion = \
             len(qep_analysis_with_constraint_exclusion.root.rfind(finder)) > 0
 
         qep_parser_without_constraint_exclusion = \
-                QEPParser(conn=self.db_connection, constraint_exclusion=False)
+            QEPParser(conn=self.db_connection, constraint_exclusion=False)
         qep_analysis_without_constraint_exclusion = \
-                qep_parser_without_constraint_exclusion.parse(self.sql_statement)
+            qep_parser_without_constraint_exclusion.parse(self.sql_statement)
         has_onetime_filter_without_constraint_exclusion = \
             len(qep_analysis_without_constraint_exclusion.root.rfind(finder)) > 0
 

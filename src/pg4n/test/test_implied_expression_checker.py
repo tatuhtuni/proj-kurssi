@@ -9,6 +9,7 @@ from ..implied_expression_checker import ImpliedExpressionChecker
 CUSTOMERS_TABLE_NAME = "implied_expression_orderby_test_table_customers"
 ORDERS_TABLE_NAME = "implied_expression_test_table_orders"
 
+
 def load_database(**kwargs):
     conn: Connection = psycopg.connect(**kwargs)
     with conn.cursor() as cur:
@@ -550,43 +551,47 @@ postgresql = factories.postgresql("factory")
 def sql_parser(postgresql: Connection):
     return SqlParser(db_connection=postgresql)
 
+
 @pytest.fixture
 def db_connection(postgresql: Connection):
     return postgresql
 
+
 def test_check(sql_parser: SqlParser, db_connection: Connection):
     SQL_CHECK_CONSTRAINT_VIOLATION = \
-f"""
+        f"""
 SELECT customer_id, fname, sname
 FROM {CUSTOMERS_TABLE_NAME}
 WHERE type = 'A';"""
 
     SQL_NOT_NULL_CONSTRAINT_VIOLATION = \
-f"""
+        f"""
 SELECT *
 FROM {CUSTOMERS_TABLE_NAME}
 WHERE sname IS NULL;"""
 
     SQL_NO_IMPLIED_EXPRESSION = \
-f"""
+        f"""
 SELECT *
 FROM {CUSTOMERS_TABLE_NAME}
 WHERE sname > fname;"""
 
     SQL_SIMPLE = \
-f"""
+        f"""
 SELECT (1, 2, 3);"""
 
     sql_statement = SQL_CHECK_CONSTRAINT_VIOLATION
     parsed_sql = sql_parser.parse_one(sql_statement)
-    checker = ImpliedExpressionChecker(parsed_sql, sql_statement, db_connection)
+    checker = ImpliedExpressionChecker(
+        parsed_sql, sql_statement, db_connection)
     assert checker != None
     warning_msg = checker.check()
     assert warning_msg != None
 
     sql_statement = SQL_NOT_NULL_CONSTRAINT_VIOLATION
     parsed_sql = sql_parser.parse_one(sql_statement)
-    checker = ImpliedExpressionChecker(parsed_sql, sql_statement, db_connection)
+    checker = ImpliedExpressionChecker(
+        parsed_sql, sql_statement, db_connection)
     assert checker != None
     warning_msg = checker.check()
     assert warning_msg != None
@@ -595,14 +600,16 @@ SELECT (1, 2, 3);"""
 
     sql_statement = SQL_NO_IMPLIED_EXPRESSION
     parsed_sql = sql_parser.parse_one(sql_statement)
-    checker = ImpliedExpressionChecker(parsed_sql, sql_statement, db_connection)
+    checker = ImpliedExpressionChecker(
+        parsed_sql, sql_statement, db_connection)
     assert checker != None
     warning_msg = checker.check()
     assert warning_msg == None
 
     sql_statement = SQL_SIMPLE
     parsed_sql = sql_parser.parse_one(sql_statement)
-    checker = ImpliedExpressionChecker(parsed_sql, sql_statement, db_connection)
+    checker = ImpliedExpressionChecker(
+        parsed_sql, sql_statement, db_connection)
     assert checker != None
     warning_msg = checker.check()
     assert warning_msg == None
