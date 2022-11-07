@@ -1,15 +1,9 @@
 import pytest
-from os import getenv
 from pytest_postgresql import factories
 import psycopg
 from psycopg import Connection
-import sqlglot
-import sqlglot.expressions as exp
 
-from ..sqlparser import (
-    SqlParser,
-    Column,
-)
+from ..sqlparser import SqlParser
 from ..subquery_select_checker import SubquerySelectChecker
 
 CUSTOMERS_TABLE_NAME = "e29_test_table_customers"
