@@ -2,14 +2,14 @@
 Test PsqlWrapper, and secondarily PsqlParser.
 """
 
-from .. import psqlwrapper
-from .. import psqlparser
+from ..psqlwrapper import PsqlWrapper
+from ..psqlparser import PsqlParser
 
 
-def new_psqlwrapper():
-    psql = psqlwrapper.PsqlWrapper("",
-                                   lambda x: "Test",
-                                   psqlparser.PsqlParser())
+def new_psqlwrapper() -> PsqlWrapper:
+    psql = PsqlWrapper("",
+                       lambda x: "Test",
+                       PsqlParser())
 
     case_psql_start = \
         b'psql (14.5)\r\nType "help" for help.\r\n\r\n\x1b[?2004hpgdb=# '
@@ -17,8 +17,8 @@ def new_psqlwrapper():
     return psql
 
 
-def test_ofilter():
-    psql: psqlwrapper.PsqlWrapper = new_psqlwrapper()
+def test_ofilter() -> None:
+    psql: PsqlWrapper = new_psqlwrapper()
 
     fresh_prompt_1 = \
         b'\x1b[?2004hpgdb=# '

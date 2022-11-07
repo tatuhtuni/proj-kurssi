@@ -124,12 +124,14 @@ class PsqlParser:
 
         match_rev_prompt_and_then_rest: ParserElement = \
             (Literal(" >=") | Literal(" #=")) + \
-            Word(self.prompt_chars) + Literal("?[\x1b") + \
-            ... + StringEnd()
-
+            Word(self.prompt_chars) + \
+            (StringEnd() | (Literal("?[\x1b") + \
+                            ... + StringEnd()))
+        # ^either stops after dbname or includes \x1b[?2004l...
         try:
             prompt_res = match_rev_prompt_and_then_rest.parse_string(psql_rev)
         except ParseException as e:
+            print(e.explain())
             if self.debug:
                 f = open("psqlparser.log", "a")
                 f.write(str(e.explain()) + "\n")
@@ -137,11 +139,17 @@ class PsqlParser:
 
         if prompt_res:
             res_list = prompt_res.as_list()
-            results = [res_list[3][::-1],
-                       res_list[2][::-1] +
-                       res_list[1][::-1] +
-                       res_list[0][::-1]
-                       ]
+            if len(res_list) == 4:  # includes \x1b[?2004l
+                results = [res_list[3][::-1],
+                           res_list[2][::-1] +
+                           res_list[1][::-1] +
+                           res_list[0][::-1]
+                           ]
+            elif len(res_list) == 2:  # stops right after database name
+                results = ['',
+                           res_list[1][::-1] +
+                           res_list[0][::-1]
+                           ]
 
         return results
 

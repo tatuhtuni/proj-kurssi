@@ -1,10 +1,10 @@
 """Test PsqlParser."""
 
-from .. import psqlparser
+from ..psqlparser import PsqlParser
 
 
-def test_parse_new_prompt():
-    p = psqlparser.PsqlParser()
+def test_parse_new_prompt() -> None:
+    p = PsqlParser()
 
     case_trivial = \
         "\x1b[?2004hpgdb=> "
@@ -17,8 +17,8 @@ def test_parse_new_prompt():
         [" #="]
 
 
-def test_parse_new_prompt_and_rest():
-    p = psqlparser.PsqlParser()
+def test_parse_new_prompt_and_rest() -> None:
+    p = PsqlParser()
 
     case_trivial = \
         "\x1b[?2004hpgdb=> "
@@ -31,8 +31,8 @@ def test_parse_new_prompt_and_rest():
         ["\x1b[?2004l\r order_id | order_total_eur | customer_id \r\n----------+-----------------+-------------\r\n(0 rows)\r\n\r\n", "\x1b[?2004hpgdb=# "]
 
 
-def test_parse_magical_return():
-    p = psqlparser.PsqlParser()
+def test_parse_magical_return() -> None:
+    p = PsqlParser()
 
     case_long_return = \
         "\r\x1b[16Ppgdb=# SELECT * FROM orders  WHERE order_total_eur = 0 AND order_tot\x08\r\n\x1b[?2004l\r"
@@ -40,8 +40,8 @@ def test_parse_magical_return():
         ["\rl4002?[\x1b\n\r"]
 
 
-def test_parse_last_found_stmt():
-    p = psqlparser.PsqlParser()
+def test_parse_last_found_stmt() -> None:
+    p = PsqlParser()
 
     case_trivial = \
         "psql (14.5)\nType \"help\" for help.\n\npgdb=# SELECT * FROM orders;"
