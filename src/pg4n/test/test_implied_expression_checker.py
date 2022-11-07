@@ -4,7 +4,6 @@ import psycopg
 from psycopg import Connection
 
 from ..sqlparser import SqlParser
-from ..qepparser import QEPParser
 from ..implied_expression_checker import ImpliedExpressionChecker
 
 CUSTOMERS_TABLE_NAME = "implied_expression_orderby_test_table_customers"
