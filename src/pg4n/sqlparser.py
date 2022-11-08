@@ -167,7 +167,7 @@ class SqlParser:
 
         # transforms 1-element tuples to just list of elements
         column_names = [x[0] for x in column_names]
-        print(f"column_names: {column_names}")
+#        print(f"column_names: {column_names}")
 
         return column_names
 
@@ -208,7 +208,7 @@ WHERE
 
         # transforms 1-element tuples to just list of elements
         type_names = [x[0] for x in type_names]
-        print(f"type_names: {type_names}")
+#        print(f"type_names: {type_names}")
 
         parseable_type_names = self._convert_from_internal_types(type_names)
 
