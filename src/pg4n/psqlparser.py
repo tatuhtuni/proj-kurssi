@@ -53,7 +53,7 @@ class PsqlParser:
     match_sql_stmt_start: ParserElement = \
         CaselessLiteral("SELECT ")  # All interesting stmts are 'select'
     match_rev_sql_stmt_start: ParserElement = \
-        CaselessLiteral(" TCELES")
+        CaselessLiteral(" TCELES") + (CaselessLiteral(" >=") | CaselessLiteral(" #="))
     match_sql_stmt: ParserElement = \
         Word(stmt_chars)
     match_whole_rev_sql_stmt: ParserElement = \
@@ -210,9 +210,9 @@ class PsqlParser:
             stmt_res_list = stmt_res.as_list()
             length: int = len(stmt_res_list)
 
-            results = [stmt_res_list[length - 1],
-                       stmt_res_list[length - 2],
-                       stmt_res_list[length - 3]]  # reverse order
+            results = [stmt_res_list[length - 2],
+                       stmt_res_list[length - 3],
+                       stmt_res_list[length - 4]]  # reverse order
 
         reversed_flattened_res: str = \
             reduce(lambda x, y: x + y[::-1], results, "")

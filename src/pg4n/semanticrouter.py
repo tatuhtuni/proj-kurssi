@@ -3,10 +3,13 @@ from sqlglot import exp
 from typing import Optional
 
 from .sqlparser import SqlParser, Column
+from .qepparser import QEPAnalysis, QEPParser
 
 # analysis modules
 from .cmp_domain_checker import CmpDomainChecker
-
+from .subquery_orderby_checker import SubqueryOrderByChecker
+from .subquery_select_checker import SubquerySelectChecker
+from .implied_expression_checker import ImpliedExpressionChecker
 
 class SemanticRouter:
     """Analyze given SQL queries via a plethora of analysis modules."""
@@ -44,6 +47,7 @@ class SemanticRouter:
                              " password=" + self.pg_pass) as conn:
             sql_parser: SqlParser = SqlParser(conn)
             sanitized_sql: exp.Expression = sql_parser.parse_one(sql_query)
+            qep_analysis: QEPAnalysis = QEPParser(conn=conn).parse(sql_query)
             analysis_result: Optional[str] = None
 
             # Comparing different domains
@@ -52,4 +56,26 @@ class SemanticRouter:
 
             if analysis_result is not None:
                 return analysis_result
+
+            # ORDER BY in subquery
+            analysis_result = \
+                SubqueryOrderByChecker(sanitized_sql, qep_analysis).check()
+
+            if analysis_result is not None:
+                return analysis_result
+
+            # SELECT in subquery
+            analysis_result = \
+                SubquerySelectChecker(sanitized_sql, sql_parser).check()
+
+            if analysis_result is not None:
+                return analysis_result
+
+            # Implied expression
+            analysis_result = \
+                ImpliedExpressionChecker(sanitized_sql, sql_query, conn).check()
+            
+            if analysis_result is not None:
+                return analysis_result
+
         return ""  # No semantic errors found
