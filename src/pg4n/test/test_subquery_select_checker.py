@@ -564,6 +564,14 @@ WHERE EXISTS (SELECT order_total_eur
 
     SQL_SUBQUERY_SELECT_IN_SUSPICIOUS = \
         f"""
+SELECT order_id
+FROM  {ORDERS_TABLE_NAME}
+WHERE customer_id in (SELECT order_total_eur
+                      FROM {CUSTOMERS_TABLE_NAME}
+                      WHERE fname = 'Alice');"""
+
+    SQL_SUBQUERY_SELECT_IN_VALID = \
+        f"""
 SELECT customer_id
 FROM  {CUSTOMERS_TABLE_NAME}
 WHERE customer_id in (SELECT order_id
@@ -584,7 +592,7 @@ WHERE EXISTS (SELECT order_total_eur
 SELECT customers_id
 FROM  {CUSTOMERS_TABLE_NAME}
 WHERE (EXISTS (SELECT order_total_eur
-               FROM {ORDERS_TABLE_NAME}
+               FROM {CUSTOMERS_TABLE_NAME}
                WHERE order_id % 2 = 0) AND
        customer_id in (SELECT order_id
                        FROM {ORDERS_TABLE_NAME}
@@ -604,7 +612,6 @@ SELECT (1, 2, 3);"""
     sql_statement = SQL_SUBQUERY_SELECT_EXISTS_SUSPICIOUS
     parsed_sql = sql_parser.parse_one(sql_statement)
     checker = SubquerySelectChecker(parsed_sql, sql_parser)
-
     assert checker is not None
     warning_msg = checker.check()
     assert warning_msg is not None
@@ -615,6 +622,13 @@ SELECT (1, 2, 3);"""
     assert checker is not None
     warning_msg = checker.check()
     assert warning_msg is not None
+
+    sql_statement = SQL_SUBQUERY_SELECT_IN_VALID
+    parsed_sql = sql_parser.parse_one(sql_statement)
+    checker = SubquerySelectChecker(parsed_sql, sql_parser)
+    assert checker is not None
+    warning_msg = checker.check()
+    assert warning_msg is None
 
     sql_statement = SQL_SUBQUERY_SELECT_WITH_TOPLEVEL_CONDITIONS_SUSPICIOUS
     parsed_sql = sql_parser.parse_one(sql_statement)

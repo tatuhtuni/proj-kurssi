@@ -57,11 +57,10 @@ class SqlParser:
         """
         Gets all columns from all tables mentioned in parsed_sql.
         """
+
+        table_names = self.find_all_table_names(parsed_sql)
+
         columns = []
-
-        root = self.get_root_node(parsed_sql)
-        table_names = self.find_all_table_names(root)
-
         for table_name in table_names:
             table_columns = self._get_columns(table_name)
             columns.extend(table_columns)

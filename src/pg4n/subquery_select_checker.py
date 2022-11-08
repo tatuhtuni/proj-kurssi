@@ -3,8 +3,7 @@ from typing import Optional
 
 import sqlglot.expressions as exp
 
-from .sqlparser import SqlParser
-
+from sqlparser import SqlParser
 
 VT100_UNDERLINE = "\x1b[4m"
 VT100_RESET = "\x1b[0m"
@@ -56,7 +55,10 @@ class SubquerySelectChecker:
 
     def _detect_suspicious_nested_conditions(self):
         # exp.In is not SubqueryPredicate for some reason
-        subqueries = self.parsed_sql.find_all(exp.In, exp.SubqueryPredicate)
+        subquery_predicates = self.parsed_sql.find_all(exp.SubqueryPredicate)
+        in_expressions = self.parsed_sql.find_all(exp.In)
+        in_subqueries = [x.args.get("query") for x in in_expressions]
+        subqueries = list(subquery_predicates) + in_subqueries
 
         if subqueries is None:
             return
@@ -77,7 +79,7 @@ class SubquerySelectChecker:
                             column_exp)
                     select_column_names.append(column_name)
 
-            if all(filter(lambda x: x not in all_subquery_column_names,
-                          select_column_names)):
+            if not any (filter(lambda x: x in all_subquery_column_names,
+                               select_column_names)):
                 context = SubquerySelectContext(subquery)
                 self.nested_condition_contexts.append(context)
