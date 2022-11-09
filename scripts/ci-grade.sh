@@ -83,7 +83,8 @@ $isortres
 #
 
 # run them in parallel
-res="$res $(cat <(runblack) <(runpylint) <(runmypy) <(runisort))"
+res="$res
+$(cat <(runblack) <(runpylint) <(runmypy) <(runisort))"
 
 # if more than 65536 characters, use a gist
 if [ "$GITHUB_TOKEN" != "" ] && [ ${#res} -gt 65536 ]; then
