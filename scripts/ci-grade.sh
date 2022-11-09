@@ -99,7 +99,7 @@ if [ "$GITHUB_TOKEN" != "" ] && [ ${#res} -gt 65536 ]; then
   }
 }'
 
-    gisturl=$(curl -s -l -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $GITHUB_TOKEN" \
+    gisturl=$(curl -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $GITHUB_TOKEN" \
         https://api.github.com/gists -d @- <<<"$gistbody" | jq -r '.html_url')
     if [ "$gisturl" = "null" ]; then
         echo '⚠ Output is truncated - run `scripts/ci-grade.sh` locally to see details'
@@ -107,9 +107,9 @@ if [ "$GITHUB_TOKEN" != "" ] && [ ${#res} -gt 65536 ]; then
         echo "⚠ Output is truncated - see [gist]($gisturl)"
 
         # delete other gists that have the same description
-        curl -s -l -X GET -H "Content-Type: application/json" -H "Authorization: Bearer $GITHUB_TOKEN" \
+        curl -s -X GET -H "Content-Type: application/json" -H "Authorization: Bearer $GITHUB_TOKEN" \
             https://api.github.com/gists | jq -r '.[] | select(.description=="'"$gistid"'" and .html_url!="'"$gisturl"'") | .url' |
-            xargs -I % curl -s -l -X DELETE -H "Content-Type: application/json" -H "Authorization: Bearer $GITHUB_TOKEN" %
+            xargs -I % curl -s -X DELETE -H "Content-Type: application/json" -H "Authorization: Bearer $GITHUB_TOKEN" %
 
     fi
     echo "$(sed -e '/^```diff$/ i **Removed - see warning above**' -e '/^```diff$/,/^```$/d' <<<"$res")"
