@@ -10,6 +10,8 @@ jobs:
       - shell: bash
         run: |
           poetry run scripts/ci-grade.sh > grade.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.BOT_SECRET }}
       - name: Comment PR
         uses: marocchino/sticky-pull-request-comment@v2
         with:
