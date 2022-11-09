@@ -5,6 +5,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Extract branch name
+        shell: bash
+        run: echo "##[set-output name=branch;]$(echo ${GITHUB_REF#refs/heads/})"
+        id: extract_branch
       - uses: actions/checkout@v2
       - uses: ./.github/actions/install
       - shell: bash
@@ -12,6 +16,7 @@ jobs:
           scripts/ci-grade.sh > grade.txt
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_SECRET }}
+          GITHUB_BRANCH: ${{ steps.extract_branch.outputs.branch }}
       - name: Comment PR
         uses: marocchino/sticky-pull-request-comment@v2
         with:

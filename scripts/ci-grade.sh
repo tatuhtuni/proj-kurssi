@@ -87,7 +87,7 @@ res="$res $(cat <(runblack) <(runpylint) <(runmypy) <(runisort))"
 
 # if more than 65536 characters, use a gist
 if [ "$GITHUB_TOKEN" != "" ] && [ ${#res} -gt 65536 ]; then
-    gistid="CI grade for $GITHUB_REPOSITORY/$(git rev-parse --abbrev-ref HEAD)"
+    gistid="CI grade for $GITHUB_REPOSITORY/$GITHUB_BRANCH"
     gistbody='{
   "description": "'$gistid'",
   "public": false,
