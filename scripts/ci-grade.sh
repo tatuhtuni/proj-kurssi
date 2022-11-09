@@ -110,8 +110,8 @@ if [ "$GITHUB_TOKEN" != "" ] && [ ${#res} -gt 65536 ]; then
         curl -s -X GET -H "Content-Type: application/json" -H "Authorization: Bearer $GITHUB_TOKEN" \
             https://api.github.com/gists | jq -r '.[] | select(.description=="'"$gistid"'" and .html_url!="'"$gisturl"'") | .url' |
             xargs -I % curl -s -X DELETE -H "Content-Type: application/json" -H "Authorization: Bearer $GITHUB_TOKEN" %
-
     fi
+
     echo "$(sed -e '/^```diff$/ i **Removed - see warning above**' -e '/^```diff$/,/^```$/d' <<<"$res")"
 else
     echo "$res"
