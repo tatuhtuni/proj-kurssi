@@ -15,7 +15,7 @@ res="ℹ Tool info: $blackurl • $pylinturl • $mypyurl • $isorturl"
 #
 
 runblack() {
-    blackres=$(black src --diff -q)
+    blackres=$(poetry run black src --diff -q)
     echo "<details><summary>black: \
 -$(grep -cP '^-(?!-)' <<<"$blackres") \
 +$(grep -cP '^\+(?!\+)' <<<"$blackres")</summary>
@@ -31,7 +31,7 @@ $blackres
 #
 
 runpylint() {
-    lintres=$(pylint src --exit-zero -sn)
+    lintres=$(poetry run pylint src --exit-zero -sn)
     lintscore=$(for x in I R C W E F; do
         n=$(echo "$lintres" | grep -cP '^\S+\s+'$x)
         [ $n != 0 ] && echo $n$x
@@ -52,7 +52,7 @@ $(sed -E -e '/\.py:[:0-9]+\s+[CEF]/s/^/- /' \
 #
 
 runmypy() {
-    mypyres=$(mypy --non-interactive --install-types --ignore-missing-imports --strict --show-error-codes --show-error-context src 2>&1)
+    mypyres=$(poetry run mypy --non-interactive --install-types --ignore-missing-imports --strict --show-error-codes --show-error-context src 2>&1)
     echo "<details><summary>mypy: $(sed -nr 's/^Found (.+)/\1/p' <<<"$mypyres")\
 </summary>
 
@@ -67,7 +67,7 @@ $(sed -r -e '/^src\//! d' -e 's/^[^ ]+ error/- &/' -e 's/^[^-]/# &/' <<<"$mypyre
 #
 
 runisort() {
-    isortres=$(isort src --diff --profile black)
+    isortres=$(poetry run isort src --diff --profile black)
     echo "<details><summary>isort: \
 -$(grep -cP '^-(?!-)' <<<"$isortres") \
 +$(grep -cP '^\+(?!\+)' <<<"$isortres")</summary>
@@ -86,7 +86,7 @@ $isortres
 res="$res $(cat <(runblack) <(runpylint) <(runmypy) <(runisort))"
 
 # if more than 65536 characters, use a gist
-if [ "$GITHUB_TOKEN" != "" && ${#res} -gt 65536 ]; then
+if [ "$GITHUB_TOKEN" != "" ] && [ ${#res} -gt 65536 ]; then
     gistid="CI grade for $GITHUB_REPOSITORY/$(git rev-parse --abbrev-ref HEAD)"
     gistbody='{
   "description": "'$gistid'",
