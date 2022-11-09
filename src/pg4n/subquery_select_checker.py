@@ -3,7 +3,7 @@ from typing import Optional
 
 import sqlglot.expressions as exp
 
-from sqlparser import SqlParser
+from .sqlparser import SqlParser
 
 VT100_UNDERLINE = "\x1b[4m"
 VT100_RESET = "\x1b[0m"
