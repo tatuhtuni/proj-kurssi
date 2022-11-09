@@ -1,7 +1,7 @@
 on: push
 
 jobs:
-  push_flow:
+  pytest:
     runs-on: ubuntu-latest
 
     services:
