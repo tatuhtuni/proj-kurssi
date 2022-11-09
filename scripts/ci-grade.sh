@@ -8,7 +8,7 @@ blackurl="[black](https://black.readthedocs.io/en/stable/usage_and_configuration
 pylinturl="[pylint](https://pylint.pycqa.org/en/latest/user_guide/usage/output.html#source-code-analysis-section)"
 mypyurl="[mypy](https://mypy.readthedocs.io/en/stable/error_codes.html#error-codes)"
 isorturl="[isort](https://pycqa.github.io/isort/)"
-echo "ℹ Tool info: $blackurl • $pylinturl • $mypyurl • $isorturl"
+res="ℹ Tool info: $blackurl • $pylinturl • $mypyurl • $isorturl"
 
 #
 # black
@@ -78,5 +78,40 @@ $isortres
 </details>"
 }
 
+#
+# output
+#
+
 # run them in parallel
-cat <(runblack) <(runpylint) <(runmypy) <(runisort)
+res="$res $(cat <(runblack) <(runpylint) <(runmypy) <(runisort))"
+
+# if more than 65536 characters, use a gist
+if [ "$GITHUB_TOKEN" != "" && ${#res} -gt 65536 ]; then
+    gistid="CI grade for $GITHUB_REPOSITORY/$(git rev-parse --abbrev-ref HEAD)"
+    gistbody='{
+  "description": "'$gistid'",
+  "public": false,
+  "files": {
+    "grade.md": {
+      "content": '"$(jq -Rs . <<<"$res")"'
+    }
+  }
+}'
+
+    gisturl=$(curl -s -l -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $GITHUB_TOKEN" \
+        https://api.github.com/gists -d @- <<<"$gistbody" | jq -r '.html_url')
+    if [ "$gisturl" = "null" ]; then
+        echo '⚠ Output is truncated - run `scripts/ci-grade.sh` locally to see details'
+    else
+        echo "⚠ Output is truncated - see [gist]($gisturl)"
+
+        # delete other gists that have the same description
+        curl -s -l -X GET -H "Content-Type: application/json" -H "Authorization: Bearer $GITHUB_TOKEN" \
+            https://api.github.com/gists | jq -r '.[] | select(.description=="'"$gistid"'" and .html_url!="'"$gisturl"'") | .url' |
+            xargs -I % curl -s -l -X DELETE -H "Content-Type: application/json" -H "Authorization: Bearer $GITHUB_TOKEN" %
+
+    fi
+    echo "$(sed -e '/^```diff$/ i **Removed - see warning above**' -e '/^```diff$/,/^```$/d' <<<"$res")"
+else
+    echo "$res"
+fi
