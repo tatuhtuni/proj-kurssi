@@ -102,9 +102,9 @@ if [ "$GITHUB_TOKEN" != "" ] && [ ${#res} -gt 65536 ]; then
     gisturl=$(curl -s -X POST -H "Content-Type: application/json" -H "Authorization: Bearer $GITHUB_TOKEN" \
         https://api.github.com/gists -d @- <<<"$gistbody" | jq -r '.html_url')
     if [ "$gisturl" = "null" ]; then
-        echo '⚠ Output is truncated - run `scripts/ci-grade.sh` locally to see details'
+        echo '⚠ Output is shortened - run `scripts/ci-grade.sh` locally to see details'
     else
-        echo "⚠ Output is truncated - see [gist]($gisturl)"
+        echo "⚠ Output is shortened - see [gist]($gisturl)"
 
         # delete other gists that have the same description
         curl -s -X GET -H "Content-Type: application/json" -H "Authorization: Bearer $GITHUB_TOKEN" \
