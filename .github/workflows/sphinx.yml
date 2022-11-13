@@ -4,7 +4,7 @@ on:
       - main
 
 jobs:
-  push_flow:
+  sphinx:
     runs-on: ubuntu-latest
 
     steps:
