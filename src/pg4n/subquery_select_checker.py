@@ -5,7 +5,6 @@ import sqlglot.expressions as exp
 
 from .sqlparser import SqlParser
 
-
 VT100_UNDERLINE = "\x1b[4m"
 VT100_RESET = "\x1b[0m"
 
@@ -33,30 +32,34 @@ class SubquerySelectChecker:
 
         warning_msg = ""
 
-        for i, nested_condition_context in \
-                enumerate(self.nested_condition_contexts):
+        for i, nested_condition_context in enumerate(self.nested_condition_contexts):
             whole_statement = str(self.parsed_sql)
             subquery = str(nested_condition_context.subquery)
             subquery_start_offset = whole_statement.find(subquery)
             subquery_end_offset = subquery_start_offset + len(subquery)
 
             warning_header = "Warning: No column in subquery SELECT references its tables [pg4n::SubquerySelect]\n"
-            underlined_query = whole_statement[:subquery_start_offset] + \
-                VT100_UNDERLINE + \
-                subquery + \
-                VT100_RESET + \
-                whole_statement[subquery_end_offset:len(whole_statement)]
+            underlined_query = (
+                whole_statement[:subquery_start_offset]
+                + VT100_UNDERLINE
+                + subquery
+                + VT100_RESET
+                + whole_statement[subquery_end_offset : len(whole_statement)]
+            )
 
             warning_msg += warning_header + underlined_query
 
             if i != len(self.nested_condition_contexts) - 1:
-                warning_msg += '\n'
+                warning_msg += "\n"
 
         return warning_msg
 
     def _detect_suspicious_nested_conditions(self):
         # exp.In is not SubqueryPredicate for some reason
-        subqueries = self.parsed_sql.find_all(exp.In, exp.SubqueryPredicate)
+        subquery_predicates = self.parsed_sql.find_all(exp.SubqueryPredicate)
+        in_expressions = self.parsed_sql.find_all(exp.In)
+        in_subqueries = [x.args.get("query") for x in in_expressions]
+        subqueries = list(subquery_predicates) + in_subqueries
 
         if subqueries is None:
             return
@@ -72,12 +75,13 @@ class SubquerySelectChecker:
             for select_expression in select.expressions:
                 column_exps = select_expression.find_all(exp.Column)
                 for column_exp in column_exps:
-                    column_name = \
-                        SqlParser.get_column_name_from_column_expression(
-                            column_exp)
+                    column_name = SqlParser.get_column_name_from_column_expression(
+                        column_exp
+                    )
                     select_column_names.append(column_name)
 
-            if all(filter(lambda x: x not in all_subquery_column_names,
-                          select_column_names)):
+            if not any(
+                filter(lambda x: x in all_subquery_column_names, select_column_names)
+            ):
                 context = SubquerySelectContext(subquery)
                 self.nested_condition_contexts.append(context)

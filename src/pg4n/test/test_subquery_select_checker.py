@@ -538,7 +538,8 @@ def load_database(**kwargs):
         insert into {ORDERS_TABLE_NAME} (order_id, order_total_eur, customer_id) values (247, 123.55, 179);
         insert into {ORDERS_TABLE_NAME} (order_id, order_total_eur, customer_id) values (248, 321.97, 195);
         insert into {ORDERS_TABLE_NAME} (order_id, order_total_eur, customer_id) values (249, 491.05, 63);
-        insert into {ORDERS_TABLE_NAME} (order_id, order_total_eur, customer_id) values (250, 367.56, 214);""")
+        insert into {ORDERS_TABLE_NAME} (order_id, order_total_eur, customer_id) values (250, 367.56, 214);"""
+        )
         conn.commit()
 
 
@@ -554,24 +555,28 @@ def sql_parser(postgresql: Connection):
 
 
 def test_check(sql_parser: SqlParser):
-    SQL_SUBQUERY_SELECT_EXISTS_SUSPICIOUS = \
-        f"""
+    SQL_SUBQUERY_SELECT_EXISTS_SUSPICIOUS = f"""
 SELECT order_id
 FROM  {ORDERS_TABLE_NAME}
 WHERE EXISTS (SELECT order_total_eur
               FROM {CUSTOMERS_TABLE_NAME}
               WHERE type = 'B');"""
 
-    SQL_SUBQUERY_SELECT_IN_SUSPICIOUS = \
-        f"""
+    SQL_SUBQUERY_SELECT_IN_SUSPICIOUS = f"""
+SELECT order_id
+FROM  {ORDERS_TABLE_NAME}
+WHERE customer_id in (SELECT order_total_eur
+                      FROM {CUSTOMERS_TABLE_NAME}
+                      WHERE fname = 'Alice');"""
+
+    SQL_SUBQUERY_SELECT_IN_VALID = f"""
 SELECT customer_id
 FROM  {CUSTOMERS_TABLE_NAME}
 WHERE customer_id in (SELECT order_id
                       FROM {ORDERS_TABLE_NAME}
                       WHERE order_total_eur > 20);"""
 
-    SQL_SUBQUERY_SELECT_WITH_TOPLEVEL_CONDITIONS_SUSPICIOUS = \
-        f"""
+    SQL_SUBQUERY_SELECT_WITH_TOPLEVEL_CONDITIONS_SUSPICIOUS = f"""
 SELECT order_id
 FROM  {ORDERS_TABLE_NAME}
 WHERE EXISTS (SELECT order_total_eur
@@ -579,32 +584,28 @@ WHERE EXISTS (SELECT order_total_eur
               WHERE type = 'B') AND
       order_id > 40;"""
 
-    SQL_MULTIPLE_SUBQUERY_SELECTS_SUSPICIOUS = \
-        f"""
+    SQL_MULTIPLE_SUBQUERY_SELECTS_SUSPICIOUS = f"""
 SELECT customers_id
 FROM  {CUSTOMERS_TABLE_NAME}
 WHERE (EXISTS (SELECT order_total_eur
-               FROM {ORDERS_TABLE_NAME}
+               FROM {CUSTOMERS_TABLE_NAME}
                WHERE order_id % 2 = 0) AND
        customer_id in (SELECT order_id
                        FROM {ORDERS_TABLE_NAME}
                        WHERE order_total_eur > 20)) OR
       order_id > 40;"""
 
-    SQL_NO_SUBQUERIES = \
-        f"""
+    SQL_NO_SUBQUERIES = f"""
 SELECT customer_id
 FROM {CUSTOMERS_TABLE_NAME}
 WHERE type = 'B';"""
 
-    SQL_NO_CONDITIONS = \
-        """
+    SQL_NO_CONDITIONS = """
 SELECT (1, 2, 3);"""
 
     sql_statement = SQL_SUBQUERY_SELECT_EXISTS_SUSPICIOUS
     parsed_sql = sql_parser.parse_one(sql_statement)
     checker = SubquerySelectChecker(parsed_sql, sql_parser)
-
     assert checker is not None
     warning_msg = checker.check()
     assert warning_msg is not None
@@ -615,6 +616,13 @@ SELECT (1, 2, 3);"""
     assert checker is not None
     warning_msg = checker.check()
     assert warning_msg is not None
+
+    sql_statement = SQL_SUBQUERY_SELECT_IN_VALID
+    parsed_sql = sql_parser.parse_one(sql_statement)
+    checker = SubquerySelectChecker(parsed_sql, sql_parser)
+    assert checker is not None
+    warning_msg = checker.check()
+    assert warning_msg is None
 
     sql_statement = SQL_SUBQUERY_SELECT_WITH_TOPLEVEL_CONDITIONS_SUSPICIOUS
     parsed_sql = sql_parser.parse_one(sql_statement)

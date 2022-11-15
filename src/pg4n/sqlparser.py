@@ -57,11 +57,10 @@ class SqlParser:
         """
         Gets all columns from all tables mentioned in parsed_sql.
         """
+
+        table_names = self.find_all_table_names(parsed_sql)
+
         columns = []
-
-        root = self.get_root_node(parsed_sql)
-        table_names = self.find_all_table_names(root)
-
         for table_name in table_names:
             table_columns = self._get_columns(table_name)
             columns.extend(table_columns)
@@ -101,8 +100,7 @@ class SqlParser:
         return unique_table_names
 
     @staticmethod
-    def get_column_name_from_column_expression(
-            column_expression: exp.Column) -> str:
+    def get_column_name_from_column_expression(column_expression: exp.Column) -> str:
         """
         Returns the column name of column expression ast node.
         """
@@ -120,9 +118,9 @@ class SqlParser:
 
         where_statements = root.find_all(exp.Where)
 
-        toplevel_where_statements = \
-            list(filter(lambda x: not x.find_ancestor(exp.Where),
-                        where_statements))
+        toplevel_where_statements = list(
+            filter(lambda x: not x.find_ancestor(exp.Where), where_statements)
+        )
 
         for where_statement in toplevel_where_statements:
             for predicate in where_statement.find_all(exp.Predicate):
@@ -154,10 +152,11 @@ class SqlParser:
         query.
         """
 
-        statement =  \
-            "SELECT column_name " \
-            "FROM information_schema.columns " \
+        statement = (
+            "SELECT column_name "
+            "FROM information_schema.columns "
             f"WHERE table_name = '{table_name}';"
+        )
 
         column_names = []
         with self.db_connection.cursor() as cursor:
@@ -167,15 +166,15 @@ class SqlParser:
 
         # transforms 1-element tuples to just list of elements
         column_names = [x[0] for x in column_names]
-#        print(f"column_names: {column_names}")
+        #        print(f"column_names: {column_names}")
 
         return column_names
 
-    def _get_column_types(self, table_name: str, columns: list[str]) \
-            -> list[PostgreSQLDataType]:
+    def _get_column_types(
+        self, table_name: str, columns: list[str]
+    ) -> list[PostgreSQLDataType]:
         # sql adapted from: https://stackoverflow.com/a/20194807/13540518
-        column_type_statement_prefix = \
-            f"""
+        column_type_statement_prefix = f"""
 SELECT
     pg_catalog.format_type(a.atttypid, a.atttypmod) AS "data_type"
 FROM
@@ -208,14 +207,15 @@ WHERE
 
         # transforms 1-element tuples to just list of elements
         type_names = [x[0] for x in type_names]
-#        print(f"type_names: {type_names}")
+        #        print(f"type_names: {type_names}")
 
         parseable_type_names = self._convert_from_internal_types(type_names)
 
         return parseable_type_names
 
     def _convert_from_internal_types(
-            self, type_names: list[str]) -> list[PostgreSQLDataType]:
+        self, type_names: list[str]
+    ) -> list[PostgreSQLDataType]:
         """
         Postgresql has internal type names such as: character or character(x).
         sqlglot can only parse the types in the form they are declared (atleast
@@ -224,11 +224,13 @@ WHERE
         """
 
         converted_types = []
-        character_matcher = re.compile(r'^(?:character|char)\(\s*(\d+)\s*\)$')
+        character_matcher = re.compile(r"^(?:character|char)\(\s*(\d+)\s*\)$")
         varchar_matcher = re.compile(
-            r'^(?:(?:character varying)|varchar)\(\s*(\d+)\s*\)$')
+            r"^(?:(?:character varying)|varchar)\(\s*(\d+)\s*\)$"
+        )
         numeric_matcher = re.compile(
-            r'^(?:numeric|decimal)\s*\(\s*(\d+)(?:\s*,\s*(\d+))?\s*\)$')
+            r"^(?:numeric|decimal)\s*\(\s*(\d+)(?:\s*,\s*(\d+))?\s*\)$"
+        )
 
         for type_name in type_names:
             if type_name == "integer":
@@ -238,35 +240,44 @@ WHERE
             elif type_name == "char":
                 converted_types.append(PostgreSQLDataType("CHAR", None, None))
             elif match := character_matcher.match(type_name):
-                conv_type = PostgreSQLDataType(f"CHAR({match.group(1)})",
-                                               int(match.group(1)), None)
+                conv_type = PostgreSQLDataType(
+                    f"CHAR({match.group(1)})", int(match.group(1)), None
+                )
                 converted_types.append(conv_type)
 
             elif match := varchar_matcher.match(type_name):
-                conv_type = PostgreSQLDataType(f"VARCHAR({match.group(1)})",
-                                               int(match.group(1)), None)
+                conv_type = PostgreSQLDataType(
+                    f"VARCHAR({match.group(1)})", int(match.group(1)), None
+                )
                 converted_types.append(conv_type)
 
             elif match := numeric_matcher.match(type_name):
                 num_groups = len(match.groups())
                 if num_groups == 1:
-                    conv_type = \
-                        PostgreSQLDataType(f"NUMERIC({match.group(1)})",
-                                           int(match.group(1)), None)
+                    conv_type = PostgreSQLDataType(
+                        f"NUMERIC({match.group(1)})", int(match.group(1)), None
+                    )
                     converted_types.append(conv_type)
 
                 elif num_groups == 2:
                     name = f"NUMERIC({match.group(1)},{match.group(2)})"
-                    conv_type = PostgreSQLDataType(name, int(match.group(1)),
-                                                   int(match.group(2)))
+                    conv_type = PostgreSQLDataType(
+                        name, int(match.group(1)), int(match.group(2))
+                    )
                     converted_types.append(conv_type)
                 else:
                     # TODO: proper error handling
-                    print(f"unrecognized number '{num_groups}' of arguments for numeric() column type", file=sys.stderr)
+                    print(
+                        f"unrecognized number '{num_groups}' of arguments for numeric() column type",
+                        file=sys.stderr,
+                    )
                     exit(1)
             else:
                 # TODO: proper error handling
-                print(f"unable to convert from internal type '{type_name}' to declared type", file=sys.stderr)
+                print(
+                    f"unable to convert from internal type '{type_name}' to declared type",
+                    file=sys.stderr,
+                )
                 exit(1)
 
         return converted_types
