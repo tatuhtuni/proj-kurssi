@@ -1,14 +1,15 @@
-import pytest
-from pytest_postgresql import factories
 import psycopg
+import pytest
 from psycopg import Connection
+from pytest_postgresql import factories
 
-from ..sqlparser import SqlParser
 from ..qepparser import QEPParser
+from ..sqlparser import SqlParser
 from ..sum_distinct_checker import SumDistinctChecker
 
 CUSTOMERS_TABLE_NAME = "sum_distinct_test_table_customers"
 ORDERS_TABLE_NAME = "sum_distinct_test_table_orders"
+
 
 def load_database(**kwargs):
     # pylint: disable=line-too-long
@@ -538,7 +539,8 @@ def load_database(**kwargs):
         insert into {ORDERS_TABLE_NAME} (order_id, order_total_eur, customer_id) values (247, 123.55, 179);
         insert into {ORDERS_TABLE_NAME} (order_id, order_total_eur, customer_id) values (248, 321.97, 195);
         insert into {ORDERS_TABLE_NAME} (order_id, order_total_eur, customer_id) values (249, 491.05, 63);
-        insert into {ORDERS_TABLE_NAME} (order_id, order_total_eur, customer_id) values (250, 367.56, 214);""")
+        insert into {ORDERS_TABLE_NAME} (order_id, order_total_eur, customer_id) values (250, 367.56, 214);"""
+        )
         conn.commit()
 
 
@@ -559,30 +561,24 @@ def qep_parser(postgresql: Connection):
 
 
 def test_inner_orderby(sql_parser: SqlParser, qep_parser: QEPParser):
-    SQL_SIMPLE = \
-f"""
+    SQL_SIMPLE = f"""
 SELECT (1, 2, 3);"""
 
-    SQL_SUM_WITH_DISTINCT = \
-f"""
+    SQL_SUM_WITH_DISTINCT = f"""
 SELECT SUM(DISTINCT order_total_eur)
 FROM {ORDERS_TABLE_NAME};"""
 
-    SQL_SUM_WITHOUT_DISTINCT = \
-f"""
+    SQL_SUM_WITHOUT_DISTINCT = f"""
 SELECT SUM(order_total_eur)
 FROM {ORDERS_TABLE_NAME};"""
 
-    SQL_AVG_WITH_DISTINCT = \
-f"""
+    SQL_AVG_WITH_DISTINCT = f"""
 SELECT AVG(DISTINCT order_total_eur)
 FROM {ORDERS_TABLE_NAME};"""
 
-    SQL_AVG_WITHOUT_DISTINCT = \
-f"""
+    SQL_AVG_WITHOUT_DISTINCT = f"""
 SELECT AVG(order_total_eur)
 FROM {ORDERS_TABLE_NAME};"""
-
 
     print("SQL_SIMPLE")
     sql_statement = SQL_SIMPLE

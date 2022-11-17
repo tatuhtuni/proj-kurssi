@@ -4,6 +4,7 @@ import sqlglot.expressions as exp
 
 from .qepparser import QEPAnalysis
 
+
 class SumDistinctChecker:
     def __init__(self, parsed_sql: exp.Expression, qep_analysis: QEPAnalysis):
         self.parsed_sql = parsed_sql
