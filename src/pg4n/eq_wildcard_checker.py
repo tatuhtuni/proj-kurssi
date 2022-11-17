@@ -4,6 +4,7 @@ import sqlglot.expressions as exp
 
 from .qepparser import QEPAnalysis
 
+
 class EqWildcardChecker:
     def __init__(self, parsed_sql: exp.Expression, qep_analysis: QEPAnalysis):
         self.parsed_sql = parsed_sql
@@ -15,12 +16,12 @@ class EqWildcardChecker:
         wild card character (the '%' character), otherwise None.
         """
 
-
         eqs = self.parsed_sql.find_all(exp.EQ)
 
         def is_wildcard_string_eq(eq):
-            return (self._is_wildcard_string_literal(eq.left) or
-                    self._is_wildcard_string_literal(eq.right))
+            return self._is_wildcard_string_literal(
+                eq.left
+            ) or self._is_wildcard_string_literal(eq.right)
 
         has_eq_wildcard = any(filter(is_wildcard_string_eq, eqs))
 
@@ -33,5 +34,5 @@ class EqWildcardChecker:
 
     def _is_wildcard_string_literal(self, operand: exp.Expression) -> bool:
         if type(operand) == exp.Literal and operand.is_string:
-            return operand.this.find('%') != -1
+            return operand.this.find("%") != -1
         return False

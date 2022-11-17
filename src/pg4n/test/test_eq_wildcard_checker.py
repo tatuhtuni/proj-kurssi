@@ -1,14 +1,15 @@
-import pytest
-from pytest_postgresql import factories
 import psycopg
+import pytest
 from psycopg import Connection
+from pytest_postgresql import factories
 
-from ..sqlparser import SqlParser
-from ..qepparser import QEPParser
 from ..eq_wildcard_checker import EqWildcardChecker
+from ..qepparser import QEPParser
+from ..sqlparser import SqlParser
 
 CUSTOMERS_TABLE_NAME = "eq_wildcard_test_table_customers"
 ORDERS_TABLE_NAME = "eq_wildcard_test_table_orders"
+
 
 def load_database(**kwargs):
     conn: Connection = psycopg.connect(**kwargs)
@@ -538,7 +539,8 @@ def load_database(**kwargs):
         insert into {ORDERS_TABLE_NAME} (order_id, order_total_eur, customer_id) values (247, 123.55, 179);
         insert into {ORDERS_TABLE_NAME} (order_id, order_total_eur, customer_id) values (248, 321.97, 195);
         insert into {ORDERS_TABLE_NAME} (order_id, order_total_eur, customer_id) values (249, 491.05, 63);
-        insert into {ORDERS_TABLE_NAME} (order_id, order_total_eur, customer_id) values (250, 367.56, 214);""")
+        insert into {ORDERS_TABLE_NAME} (order_id, order_total_eur, customer_id) values (250, 367.56, 214);"""
+        )
         conn.commit()
 
 
@@ -559,51 +561,43 @@ def qep_parser(postgresql: Connection):
 
 
 def test_inner_orderby(sql_parser: SqlParser, qep_parser: QEPParser):
-    SQL_SIMPLE = \
-f"""
+    SQL_SIMPLE = f"""
 SELECT (1, 2, 3);"""
 
-    SQL_EQ_NO_WILDCARD = \
-f"""
+    SQL_EQ_NO_WILDCARD = f"""
 SELECT sname
 FROM {CUSTOMERS_TABLE_NAME}
 WHERE sname = 'Flinn';"""
 
-    SQL_EQ_WILDCARD = \
-f"""
+    SQL_EQ_WILDCARD = f"""
 SELECT sname
 FROM {CUSTOMERS_TABLE_NAME}
 WHERE sname = 'O%';"""
 
-    SQL_LIKE_WILDCARD = \
-f"""
+    SQL_LIKE_WILDCARD = f"""
 SELECT sname
 FROM {CUSTOMERS_TABLE_NAME}
 WHERE sname LIKE 'O%';"""
 
-    SQL_LIKE_WILDCARD_AND_EQ_WILDCARD1 = \
-f"""
+    SQL_LIKE_WILDCARD_AND_EQ_WILDCARD1 = f"""
 SELECT sname
 FROM {CUSTOMERS_TABLE_NAME}
 WHERE sname LIKE 'O%' AND
       fname = 'A%';"""
 
-    SQL_LIKE_WILDCARD_AND_EQ_WILDCARD2 = \
-f"""
+    SQL_LIKE_WILDCARD_AND_EQ_WILDCARD2 = f"""
 SELECT sname, fname
 FROM {CUSTOMERS_TABLE_NAME}
 WHERE fname = 'A%' AND
       sname LIKE 'O%';"""
 
-    SQL_LIKE_WILDCARD_AND_EQ_NO_WILDCARD1 = \
-f"""
+    SQL_LIKE_WILDCARD_AND_EQ_NO_WILDCARD1 = f"""
 SELECT sname, fname
 FROM {CUSTOMERS_TABLE_NAME}
 WHERE sname LIKE 'O%' AND
       fname = 'Amble';"""
 
-    SQL_LIKE_WILDCARD_AND_EQ_NO_WILDCARD2 = \
-f"""
+    SQL_LIKE_WILDCARD_AND_EQ_NO_WILDCARD2 = f"""
 SELECT sname, fname
 FROM {CUSTOMERS_TABLE_NAME}
 WHERE fname = 'Amble' AND
