@@ -1,9 +1,9 @@
 from typing import Optional
 
-import sqlglot
 import sqlglot.expressions as exp
 
 from .qepparser import QEPAnalysis
+
 
 class StrangeHavingChecker:
     def __init__(self, parsed_sql: exp.Expression, qep_analysis: QEPAnalysis):
@@ -26,7 +26,3 @@ class StrangeHavingChecker:
         warning_msg = "Warning: HAVING without GROUP BY [pg4n::StrangeHaving]"
 
         return warning_msg
-
-
-def _is_empty(generator) -> bool:
-    return not not generator

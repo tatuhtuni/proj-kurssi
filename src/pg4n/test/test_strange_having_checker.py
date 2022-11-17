@@ -1,17 +1,18 @@
-
-import pytest
-from pytest_postgresql import factories
 import psycopg
+import pytest
 from psycopg import Connection
+from pytest_postgresql import factories
 
-from ..sqlparser import SqlParser
 from ..qepparser import QEPParser
-from ..strange_having_checker import StrangeHavingChecker;
+from ..sqlparser import SqlParser
+from ..strange_having_checker import StrangeHavingChecker
 
 CUSTOMERS_TABLE_NAME = "strange_having_test_table_customer"
 ORDERS_TABLE_NAME = "strange_having_test_table_orders"
 
+
 def load_database(**kwargs):
+    # pylint: disable=line-too-long
     conn: Connection = psycopg.connect(**kwargs)
     with conn.cursor() as cur:
         cur.execute(
@@ -538,7 +539,8 @@ def load_database(**kwargs):
         insert into {ORDERS_TABLE_NAME} (order_id, order_total_eur, customer_id) values (247, 123.55, 179);
         insert into {ORDERS_TABLE_NAME} (order_id, order_total_eur, customer_id) values (248, 321.97, 195);
         insert into {ORDERS_TABLE_NAME} (order_id, order_total_eur, customer_id) values (249, 491.05, 63);
-        insert into {ORDERS_TABLE_NAME} (order_id, order_total_eur, customer_id) values (250, 367.56, 214);""")
+        insert into {ORDERS_TABLE_NAME} (order_id, order_total_eur, customer_id) values (250, 367.56, 214);"""
+        )
         conn.commit()
 
 
@@ -559,24 +561,20 @@ def qep_parser(postgresql: Connection):
 
 
 def test_inner_orderby(sql_parser: SqlParser, qep_parser: QEPParser):
-    SQL_NEITHER_GROUP_BY_OR_HAVING = \
-f"""
+    SQL_NEITHER_GROUP_BY_OR_HAVING = f"""
 SELECT (1, 2, 3);"""
 
-    SQL_GROUP_BY_WITHOUT_HAVING = \
-f"""
+    SQL_GROUP_BY_WITHOUT_HAVING = f"""
 SELECT customer_id, SUM(order_total_eur)
 FROM {ORDERS_TABLE_NAME}
 GROUP BY customer_id;"""
 
-    SQL_HAVING_WITHOUT_GROUP_BY = \
-f"""
+    SQL_HAVING_WITHOUT_GROUP_BY = f"""
 SELECT 'T' AS result
 FROM {ORDERS_TABLE_NAME}
 HAVING MIN(order_total_eur) < MAX(order_total_eur);"""
 
-    SQL_GROUP_BY_WITH_HAVING = \
-f"""
+    SQL_GROUP_BY_WITH_HAVING = f"""
 SELECT customer_id, SUM(order_total_eur)
 FROM {ORDERS_TABLE_NAME}
 GROUP BY customer_id
