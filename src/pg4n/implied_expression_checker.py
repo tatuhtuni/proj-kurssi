@@ -12,6 +12,7 @@ from .qepparser import (
     QEPAnalysis,
     QEPNode,
 )
+from .errfmt import ErrorFormatter
 
 
 class ImpliedExpressionChecker:
@@ -50,6 +51,9 @@ class ImpliedExpressionChecker:
         if not has_implied_expression:
             return None
 
-        warning_msg = "Warning: Found impossible comparison due to column/table constraints [pg4n::ImpliedExpression]"
+        warning = "Found impossible comparison due to column/table constraints"
+        warning_name = "ImpliedExpression"
+        formatter = ErrorFormatter(warning, warning_name)
+        warning_msg = formatter.format()
 
         return warning_msg
