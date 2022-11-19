@@ -3,15 +3,8 @@ import sys
 from os import getenv
 from typing import Optional
 
-# Adds way more readable python error messages
-from IPython.core import ultratb
-
 from .config_parser import ConfigParser
 from .config_values import ConfigValues
-
-sys.excepthook = ultratb.FormattedTB(
-    mode="Verbose", color_scheme="Linux", call_pdb=False
-)
 
 
 class ConfigReader:
@@ -66,3 +59,13 @@ class ConfigReader:
                 exit(1)
 
         return config_values
+
+
+def main():
+    from pprint import pprint
+    config_reader = ConfigReader()
+    config_values = config_reader.read()
+    pprint(config_values)
+
+if __name__ == "__main__":
+    main()

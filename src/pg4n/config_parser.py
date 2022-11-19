@@ -3,7 +3,6 @@ from typing import Optional, TextIO
 
 from .config_values import ConfigValues
 
-
 class ConfigParser:
     def __init__(self, file: TextIO):
         self.file: TextIO = file
@@ -21,7 +20,14 @@ class ConfigParser:
             flags=re.IGNORECASE,
         )
 
+        # Needed for bytes containing files
+        self.file.seek(0)
+
         for line in self.file.readlines():
+            # To make this work with bytes objects like TemporaryFile contents
+            if isinstance(line, bytes):
+                line = bytes.decode(line, "utf-8")
+            line = str(line)
             if match := option_matcher.match(line):
                 if len(match.groups()) != 2:
                     continue
