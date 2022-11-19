@@ -1,9 +1,10 @@
 """Parse psql output."""
 
 from typing import List
-from pyparsing import CaselessLiteral, Char, Literal, MatchFirst, NotAny, \
-    ParseException, ParseResults, ParserElement, StringEnd, White, Word, ZeroOrMore, \
-    identbodychars
+from pyparsing import \
+    CaselessLiteral, Char, Combine, Literal, ParseException, \
+    ParseResults, ParserElement, StringEnd, White, Word, ZeroOrMore, \
+    identbodychars, nums
 from functools import reduce
 from string import printable
 
@@ -192,6 +193,15 @@ class PsqlParser:
             db_name = stmt_res_list[length - 1][::-1]
 
         # reverse back, concatenate, and remove \n's
+        
+        # TODO/BUG: removing \n's is a tough problem, see:
+        # "pgdb=> SELECT * FROM orders WHERE order_tot
+        # al_eur = 100;"
+        # should parse as \n -> ""
+        # "pgdb=> SELECT
+        # * FROM orders WHERE order_total_eur = 100;
+        # should parse as \n -> " " to avoid "SELECT* FROM ..".
+        # replacing \n's with "" maybe has less edge cases.
         reversed_flattened_res: str = \
             reduce(lambda x, y: x + y[::-1], results, "")
         no_newlines_res = reversed_flattened_res.replace('\n', '')
@@ -218,3 +228,29 @@ class PsqlParser:
             return demultilined_res
         else:
             return ""
+
+    def parse_psql_version(self, psql: str) -> str:
+        """Parse for psql version and return version number.
+
+        :param psql: psql --version output
+
+        :returns: version string (e.g "14.5")
+        """
+
+        match_version_stmt: ParserElement = \
+            Literal("psql (PostgreSQL) ") + Combine(Word(nums) + '.' + Word(nums))
+        stmt_res: ParseResults = None
+        result: str = ""
+
+        try:
+            stmt_res = match_version_stmt.parse_string(psql)
+        except ParseException as e:
+            if self.debug:
+                f = open("psqlparser.log", "a")
+                f.write(str(e.explain()) + "\n")
+                f.close()
+
+        if stmt_res:
+            result = stmt_res.as_list()[1]
+
+        return result

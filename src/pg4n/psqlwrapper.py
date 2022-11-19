@@ -4,6 +4,7 @@ Uses pexpect in combination with pyte for interfacing and screen-scraping
 """
 
 from typing import Callable, List
+from functools import reduce
 import pexpect
 from pyte import Stream, Screen
 from shutil import get_terminal_size
@@ -19,8 +20,9 @@ class PsqlWrapper:
     """
 
     debug: bool = False
+    supported_psql_versions: list[str] = ["14.5"]
 
-    def __init__(self, db_name_parameter: bytes,
+    def __init__(self, psql_args: bytes,
                  hook_f: Callable[[str], str], parser: PsqlParser):
         """Build wrapper for selected database.
 
@@ -29,7 +31,7 @@ class PsqlWrapper:
         to and from which semantic error messages are received in return.
         :param parser: A parser that implements the required parsing functions.
         """
-        self.db_name: bytes = db_name_parameter
+        self.psql_args: bytes = psql_args
         self.analyze: Callable[[str], str] = hook_f
         self.parser: PsqlParser = parser
 
@@ -47,12 +49,33 @@ class PsqlWrapper:
     def start(self) -> None:
         """Start psql process and then start feeding hook function with \
         intercepted output."""
-        c = pexpect.spawn("psql " + bytes.decode(self.db_name),
+
+        version_msg = self.check_psql_version()
+        if version_msg != "":
+            print(version_msg)
+
+        c = pexpect.spawn("psql " + bytes.decode(self.psql_args),
                           encoding="utf-8",
                           dimensions=(self.rows, self.cols))
 
         c.interact(input_filter=self.ifilter,
                    output_filter=self.ofilter)
+
+    def check_psql_version(self) -> str:
+        version_info = \
+            pexpect.spawn("psql " + bytes.decode(self.psql_args) +
+                          " --version")
+        version_info.expect(pexpect.EOF)
+        version_info_str: str = bytes.decode(version_info.before)
+        version: str = self.parser.parse_psql_version(version_info_str)
+        version_ok: bool = reduce(lambda x, y: True if x else version == y,
+                                  self.supported_psql_versions, False)
+        if version_ok:
+            return ""
+        else:
+            return "Pg4n has only been tested on psql versions " + \
+                str(self.supported_psql_versions) + "."
+        
 
     def ifilter(self, input: bytes) -> bytes:
         """User input filter function for pexpect.interact: not used.
