@@ -6,7 +6,7 @@ from .config_values import ConfigValues
 
 class ConfigParser:
     def __init__(self, file: TextIO):
-        self.file = file
+        self.file: TextIO = file
 
     def parse(self) -> Optional[ConfigValues]:
         """
