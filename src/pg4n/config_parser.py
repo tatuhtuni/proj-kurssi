@@ -3,6 +3,7 @@ from typing import Optional, TextIO
 
 from .config_values import ConfigValues
 
+
 class ConfigParser:
     def __init__(self, file: TextIO):
         self.file: TextIO = file

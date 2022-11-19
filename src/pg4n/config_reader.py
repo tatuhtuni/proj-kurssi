@@ -59,13 +59,3 @@ class ConfigReader:
                 exit(1)
 
         return config_values
-
-
-def main():
-    from pprint import pprint
-    config_reader = ConfigReader()
-    config_values = config_reader.read()
-    pprint(config_values)
-
-if __name__ == "__main__":
-    main()
