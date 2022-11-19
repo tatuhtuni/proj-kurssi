@@ -1,15 +1,17 @@
 import os.path
 import sys
 from os import getenv
-from typing import TextIO, TypedDict, Optional
-from pprint import pprint
-
-from .config_values import ConfigValues
-from .config_parser import ConfigParser
+from typing import Optional
 
 # Adds way more readable python error messages
 from IPython.core import ultratb
-sys.excepthook = ultratb.FormattedTB(mode='Verbose', color_scheme='Linux', call_pdb=False)
+
+from .config_parser import ConfigParser
+from .config_values import ConfigValues
+
+sys.excepthook = ultratb.FormattedTB(
+    mode="Verbose", color_scheme="Linux", call_pdb=False
+)
 
 
 class ConfigReader:
@@ -52,16 +54,15 @@ class ConfigReader:
                             config_values[k] = v
             except Exception as e:
                 if hasattr(e, "errno"):
-                    print(f"error: unable_to_read config file: '{config_fname}' [str({e.errno})]",
-                          file=sys.stderr)
+                    print(
+                        f"error: unable_to_read config file: '{config_fname}' [str({e.errno})]",
+                        file=sys.stderr,
+                    )
                 else:
-                    print(f"error: unable_to_read config file: '{config_fname}'",
-                          file=sys.stderr)
+                    print(
+                        f"error: unable_to_read config file: '{config_fname}'",
+                        file=sys.stderr,
+                    )
                 exit(1)
 
-def main():
-    config_reader = ConfigReader()
-    config_values: ConfigValues = config_reader.read()
-
-if __name__ == "__main__":
-    main()
+        return config_values

@@ -1,16 +1,7 @@
-from typing import Optional, TextIO
 import re
+from typing import Optional, TextIO
 
 from .config_values import ConfigValues
-
-# Adds way more readable python error messages
-import sys
-from IPython.core import ultratb
-
-sys.excepthook = ultratb.FormattedTB(
-    mode="Verbose", color_scheme="Linux", call_pdb=False
-)
-from icecream import ic
 
 
 class ConfigParser:
@@ -37,7 +28,7 @@ class ConfigParser:
                 optname = match.group("optname")
                 if optname.lower() in optnames:
                     key = self._convert_from_anycase_to_propercase(optname)
-                    config_values[optname] = self._optval_to_bool(
+                    config_values[key] = self._optval_to_bool(
                         str(match.group("optval"))
                     )
 
@@ -54,7 +45,7 @@ class ConfigParser:
 
         if optval.lower() in true_values:
             return True
-        elif optval.lower() in false_values:
+        if optval.lower() in false_values:
             return False
 
         return False
