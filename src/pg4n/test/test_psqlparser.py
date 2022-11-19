@@ -53,7 +53,27 @@ def test_parse_last_found_stmt() -> None:
     assert p.parse_last_found_stmt(case_select_then_select) == \
         "SELECT * FROM orders WHERE order_total_eur = 0 AND order_total_eur = 100;"
 
+    # Broken case found in empirical testing
+    case_empirical_1 = \
+        "sql (14.5)\nType \"help\" for help.\n\npgdb=# SELECT * FROM orders  WHERE order_total_eur = 0 AND order_total_eur = 100;\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n"
+    assert p.parse_last_found_stmt(case_empirical_1) == \
+        "SELECT * FROM orders  WHERE order_total_eur = 0 AND order_total_eur = 100;"
+
+    case_query_with_newline = \
+        "sql (14.5)\nType \"help\" for help.\n\npgdb=# SELECT * FROM orders WHERE order\n_total_eur = 100;\n\n\n"
+    assert p.parse_last_found_stmt(case_query_with_newline) == \
+        "SELECT * FROM orders WHERE order_total_eur = 100;"
     # current unfixed bug case, needs to be fixed after mid-presentations:
-#    case_select_then_insert = "psql (14.5)\nType \"help\" for help.\n\npgdb=# SELECT * FROM orders;\npgdb=# INSERT INTO orders VALUES (6, 6, 6);"
-#    assert p.parse_last_found_stmt(case_select_then_insert) == \
-#        ""
+    case_select_then_insert = "psql (14.5)\nType \"help\" for help.\n\npgdb=# SELECT * FROM orders;\npgdb=# INSERT INTO orders VALUES (6, 6, 6);"
+    assert p.parse_last_found_stmt(case_select_then_insert) == \
+        ""
+
+    case_multiple_queries_and_whitespaces = \
+        "psql (14.5)\nType \"help\" for help.\n\npgdb=# SELECT * FROM orders;\npgdb=# INSERT INTO orders VALUES (6, 6, 6);\npgdb=#   SELECT    * FROM\n  orders    WHERE order_total_eur = 100   ; "
+    assert p.parse_last_found_stmt(case_multiple_queries_and_whitespaces) == \
+        "  SELECT    * FROM  orders    WHERE order_total_eur = 100   ;"
+
+    case_multiline_query = \
+        "psql (14.5)\nType \"help\" for help.\n\npgdb=# SELECT * FROM\npgdb-# orders;"
+    assert p.parse_last_found_stmt(case_multiline_query) == \
+        "SELECT * FROM orders;"

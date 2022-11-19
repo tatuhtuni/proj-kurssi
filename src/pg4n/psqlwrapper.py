@@ -150,7 +150,7 @@ class PsqlWrapper:
         if output[0:2] == b'\r\n':
             return True
 
-        # complicated case: user has ctrl-R'd, copy-pasted command or something,
+        # complicated case: user has ctrl-R'd, copypasted command or something.
         # and the \r\n is somewhere in midst of output..
         if self.parser.parse_magical_return(
                 bytes.decode(output, "utf-8")) != []:
