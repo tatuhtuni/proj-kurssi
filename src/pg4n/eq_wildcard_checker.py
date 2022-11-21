@@ -3,6 +3,7 @@ from typing import Optional
 import sqlglot.expressions as exp
 
 from .qepparser import QEPAnalysis
+from .errfmt import ErrorFormatter
 
 
 class EqWildcardChecker:
@@ -28,7 +29,10 @@ class EqWildcardChecker:
         if not has_eq_wildcard:
             return None
 
-        warning_msg = "Warning: Possible use of '=' instead of % for wildcard pattern [pg4n::EqWildcard]"
+        warning = "Possible use of '=' instead of LIKE for wildcard pattern"
+        warning_name = "EqWildcard"
+        formatter = ErrorFormatter(warning, warning_name)
+        warning_msg = formatter.format()
 
         return warning_msg
 

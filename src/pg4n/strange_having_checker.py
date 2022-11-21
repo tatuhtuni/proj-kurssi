@@ -3,6 +3,7 @@ from typing import Optional
 import sqlglot.expressions as exp
 
 from .qepparser import QEPAnalysis
+from .errfmt import ErrorFormatter
 
 
 class StrangeHavingChecker:
@@ -23,6 +24,9 @@ class StrangeHavingChecker:
         if not has_strange_having:
             return None
 
-        warning_msg = "Warning: HAVING without GROUP BY [pg4n::StrangeHaving]"
+        warning = "HAVING without GROUP BY"
+        warning_name = "StrangeHaving"
+        formatter = ErrorFormatter(warning, warning_name)
+        warning_msg = formatter.format()
 
         return warning_msg

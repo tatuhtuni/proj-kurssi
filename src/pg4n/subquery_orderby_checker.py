@@ -2,7 +2,8 @@ from typing import Optional
 
 import sqlglot.expressions as exp
 
-from . qepparser import QEPAnalysis
+from .qepparser import QEPAnalysis
+from .errfmt import ErrorFormatter
 
 
 class SubqueryOrderByChecker:
@@ -29,6 +30,9 @@ class SubqueryOrderByChecker:
         if not has_inner_orderby:
             return None
 
-        warning_msg = "Warning: ORDER BY in a subquery [pg4n::InnerOrderBy]"
+        warning = "ORDER BY in a subquery"
+        warning_name = "InnerOrderBy"
+        formatter = ErrorFormatter(warning, warning_name)
+        warning_msg = formatter.format()
 
         return warning_msg

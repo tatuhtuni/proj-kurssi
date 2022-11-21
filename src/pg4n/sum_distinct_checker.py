@@ -3,6 +3,7 @@ from typing import Optional
 import sqlglot.expressions as exp
 
 from .qepparser import QEPAnalysis
+from .errfmt import ErrorFormatter
 
 
 class SumDistinctChecker:
@@ -28,6 +29,9 @@ class SumDistinctChecker:
         if not (has_sum_distinct or has_avg_distinct):
             return None
 
-        warning_msg = "Warning: DISTINCT in SUM or AVG [pg4n::SumDistinct]"
+        warning = "DISTINCT in SUM or AVG"
+        warning_name = "SumDistinct"
+        formatter = ErrorFormatter(warning, warning_name)
+        warning_msg = formatter.format()
 
         return warning_msg

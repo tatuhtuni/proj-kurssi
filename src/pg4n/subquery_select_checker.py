@@ -4,6 +4,7 @@ from typing import Optional
 import sqlglot.expressions as exp
 
 from .sqlparser import SqlParser
+from .errfmt import ErrorFormatter
 
 VT100_UNDERLINE = "\x1b[4m"
 VT100_RESET = "\x1b[0m"
@@ -32,13 +33,15 @@ class SubquerySelectChecker:
 
         warning_msg = ""
 
+        warning = "No column in subquery SELECT references its tables"
+        warning_name = "SubquerySelect"
+
         for i, nested_condition_context in enumerate(self.nested_condition_contexts):
             whole_statement = str(self.parsed_sql)
             subquery = str(nested_condition_context.subquery)
             subquery_start_offset = whole_statement.find(subquery)
             subquery_end_offset = subquery_start_offset + len(subquery)
 
-            warning_header = "Warning: No column in subquery SELECT references its tables [pg4n::SubquerySelect]\n"
             underlined_query = (
                 whole_statement[:subquery_start_offset]
                 + VT100_UNDERLINE
@@ -47,7 +50,8 @@ class SubquerySelectChecker:
                 + whole_statement[subquery_end_offset : len(whole_statement)]
             )
 
-            warning_msg += warning_header + underlined_query
+            formatter = ErrorFormatter(warning, warning_name, underlined_query)
+            warning_msg += formatter.format()
 
             if i != len(self.nested_condition_contexts) - 1:
                 warning_msg += "\n"

@@ -6,6 +6,7 @@ import sqlglot.expressions as exp
 
 from .sqlparser import SqlParser
 from .sqlparser import Column
+from .errfmt import ErrorFormatter
 
 
 VT100_UNDERLINE = "\x1b[4m"
@@ -146,7 +147,8 @@ class CmpDomainChecker:
 
             domain1 = suspicious_cmp_context.a.type.name
             domain2 = suspicious_cmp_context.b.type.name
-            msg_header = f"Warning: Comparison between different domains ({domain1}, {domain2}) [pg4n::CmpDomains]\n"
+            warning = f"Comparison between different domains ({domain1}, {domain2})"
+            warning_name = "CmpDomains"
 
             cmp_exp = suspicious_cmp_context.expression
 
@@ -170,7 +172,8 @@ class CmpDomainChecker:
                 VT100_RESET + \
                 whole_statement[total_end_offset:len(whole_statement)]
 
-            self.warning_msg = self.warning_msg + msg_header + underlined_query
+            formatter = ErrorFormatter(warning, warning_name, underlined_query)
+            self.warning_msg = formatter.format()
             if i != len(self.suspicious_cmp_contexts) - 1:
                 self.warning_msg += '\n'
 
