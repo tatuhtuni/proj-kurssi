@@ -1,4 +1,5 @@
 import re
+from dataclasses import dataclass
 from typing import Optional, TextIO
 import sys
 
@@ -30,6 +31,15 @@ class ConfigParser:
         # Needed for bytes containing files
         self.file.seek(0)
 
+        # The following stuff is for improved error messages
+        @dataclass(frozen=True)
+        class SeenOptionContext():
+            key: str
+            line: str
+            line_number: int
+        seen_option_contexts: list[SeenOptionContext] = []
+        multiply_defined_options = set()
+
         for line_number, line in enumerate(self.file.readlines()):
             # To make this work with bytes objects like TemporaryFile contents
             if isinstance(line, bytes):
@@ -49,6 +59,12 @@ class ConfigParser:
                     config_values[key] = self._optval_to_bool(
                         str(match.group("optval"))
                     )
+
+                    if key in [x.key for x in seen_option_contexts]:
+                        seen_option_contexts.append(SeenOptionContext(key=key, line=line.rstrip('\n'), line_number=line_number))
+                        multiply_defined_options.add(key)
+                    else:
+                        seen_option_contexts.append(SeenOptionContext(key=key, line=line.rstrip('\n'), line_number=line_number))
                 else:
                     output_line = line.rstrip('\n')
                     print(f"warning: bad warning name or value in line {line_number}: '{output_line}' in configuration file: '{self.file.name}'", file=sys.stderr)
@@ -57,6 +73,13 @@ class ConfigParser:
                 print(f"warning: unable to parse line {line_number}: '{output_line}' in configuration file: '{self.file.name}'", file=sys.stderr)
 
 
+        # Not so brilliant computational complexity
+        for key in multiply_defined_options:
+            seen_option_lines = ""
+            for ctx in filter(lambda x: x.key == key, seen_option_contexts):
+                seen_option_lines += f"line {ctx.line_number}: '{ctx.line}'\n"
+            print(f"warning: option '{key}' is set multiple times\n{seen_option_lines}in configuration file: '{self.file.name}'",
+                    file=sys.stderr)
 
         return config_values if len(config_values) > 0 else None
 
