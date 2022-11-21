@@ -1,11 +1,14 @@
 import os.path
 import sys
 from os import getenv
+from os import getcwd
 from typing import Optional
 
 from .config_parser import ConfigParser
 from .config_values import ConfigValues
 
+
+CONFIG_FILE_NAME = "pg4n.conf"
 
 class ConfigReader:
     def __init__(self):
@@ -25,14 +28,28 @@ class ConfigReader:
         xdg_config_home = getenv("XDG_CONFIG_HOME")
         home = getenv("HOME")
 
-        if os.path.isfile("/etc/pg4n/config"):
-            config_fnames.append("/etc/pg4n/config")
-        elif xdg_config_home:
-            if os.path.isfile(xdg_config_home + "/pg4n/config"):
-                config_fnames.append(xdg_config_home + "/pg4n/config")
+        etc_config_path = "/etc/" + CONFIG_FILE_NAME
+        if os.path.isfile(etc_config_path):
+            config_fnames.append(etc_config_path)
+
+        if xdg_config_home:
+            custom_config_home_path = xdg_config_home + "/" + CONFIG_FILE_NAME
+            if os.path.isfile(custom_config_home_path):
+                config_fnames.append(custom_config_home_path)
         else:
-            if os.path.isfile(home + "/pg4n/config"):
-                config_fnames.append(home + "/pg4n/config")
+            home_config_path = home + "/.config/" + CONFIG_FILE_NAME
+            if os.path.isfile(home_config_path):
+                config_fnames.append(home_config_path)
+
+        # As a Last resort, we check the current directory for a config file.
+        try:
+            cwd = os.getcwd()
+            cwd_config_path = cwd + "/" + CONFIG_FILE_NAME
+            if os.path.isfile(cwd_config_path):
+                config_fnames.append(cwd_config_path)
+        except Exception as e:
+            print(f"error: unable to get current working directory '{e}'",
+                  file=sys.stderr)
 
         if len(config_fnames) == 0:
             return None
