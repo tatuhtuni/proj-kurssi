@@ -66,7 +66,7 @@ SubquerySelect 0
 # This is the matching output of running the program that reads only 1 config
 # file CONFIG
 # configuration file output is not tested because its system dependent
-    # warning_matcher = re.compile(\
+# warning_matcher = re.compile(\
 # """
 # line 4: 'InnerOrderBy true'
 # line 5: 'InnerOrderBy true'

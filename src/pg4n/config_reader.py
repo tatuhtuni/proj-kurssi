@@ -1,14 +1,13 @@
 import os.path
 import sys
-from os import getenv
-from os import getcwd
+from os import getcwd, getenv
 from typing import Optional
 
 from .config_parser import ConfigParser
 from .config_values import ConfigValues
 
-
 CONFIG_FILE_NAME = "pg4n.conf"
+
 
 class ConfigReader:
     def __init__(self):
@@ -48,8 +47,9 @@ class ConfigReader:
             if os.path.isfile(cwd_config_path):
                 config_fnames.append(cwd_config_path)
         except Exception as e:
-            print(f"error: unable to get current working directory '{e}'",
-                  file=sys.stderr)
+            print(
+                f"error: unable to get current working directory '{e}'", file=sys.stderr
+            )
 
         if len(config_fnames) == 0:
             return None
@@ -66,12 +66,12 @@ class ConfigReader:
                 if hasattr(e, "errno"):
                     print(
                         f"error: unable to read config file: '{config_fname}' [str({e.errno})]",
-                        file=sys.stderr
+                        file=sys.stderr,
                     )
                 else:
                     print(
                         f"error: unable to read config file: '{config_fname}'",
-                        file=sys.stderr
+                        file=sys.stderr,
                     )
 
         return config_values
