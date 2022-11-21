@@ -68,8 +68,7 @@ class PsqlWrapper:
         version_info.expect(pexpect.EOF)
         version_info_str: str = bytes.decode(version_info.before)
         version: str = self.parser.parse_psql_version(version_info_str)
-        version_ok: bool = reduce(lambda x, y: True if x else version == y,
-                                  self.supported_psql_versions, False)
+        version_ok: bool = version in self.supported_psql_versions
         if version_ok:
             return ""
         else:
