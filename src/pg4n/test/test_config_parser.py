@@ -7,6 +7,11 @@ from ..config_values import ConfigValues
 
 def test_parse():
     CONFIG1 = """ImpliedExpression 0
+
+######################
+ # # #
+######   # # #
+              ##       3              ## jkelm el el e
 CmpDomains false
 InnerOrderBy true
 ImpliedExpression yes
@@ -17,8 +22,10 @@ innerorderby true
 
 iNnErOrDeRbY true
 
+# Gives too many false positives
 SubquerySelect 0
 SubquerySelect 0
+#
 """
 
     with TemporaryFile(buffering=0) as tmp_file:

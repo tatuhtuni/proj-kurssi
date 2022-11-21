@@ -65,14 +65,13 @@ class ConfigReader:
             except Exception as e:
                 if hasattr(e, "errno"):
                     print(
-                        f"error: unable_to_read config file: '{config_fname}' [str({e.errno})]",
-                        file=sys.stderr,
+                        f"error: unable to read config file: '{config_fname}' [str({e.errno})]",
+                        file=sys.stderr
                     )
                 else:
                     print(
-                        f"error: unable_to_read config file: '{config_fname}'",
-                        file=sys.stderr,
+                        f"error: unable to read config file: '{config_fname}'",
+                        file=sys.stderr
                     )
-                exit(1)
 
         return config_values

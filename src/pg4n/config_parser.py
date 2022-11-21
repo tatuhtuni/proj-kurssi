@@ -1,10 +1,20 @@
 import re
 from typing import Optional, TextIO
+import sys
 
 from .config_values import ConfigValues
 
 
 class ConfigParser:
+    _option_matcher: re.Pattern = re.compile(
+        r"\s*(?P<optname>\w+)\s+(?P<optval>1|0|true|false|yes|no)\s*$",
+        flags=re.IGNORECASE,
+    )
+    _empty_line_matcher: re.Pattern = re.compile(r"^\s*$")
+    _comment_matcher: re.Pattern = re.compile(r"^\s*#+.*$")
+
+
+
     def __init__(self, file: TextIO):
         self.file: TextIO = file
 
@@ -16,28 +26,37 @@ class ConfigParser:
         optnames = [x.lower() for x in ConfigValues.__annotations__.keys()]
         config_values: ConfigValues = {}
 
-        option_matcher = re.compile(
-            r"[ \t]*(?P<optname>\w+)[ \t]+(?P<optval>1|0|true|false|yes|no)[ \t]*$",
-            flags=re.IGNORECASE,
-        )
 
         # Needed for bytes containing files
         self.file.seek(0)
 
-        for line in self.file.readlines():
+        for line_number, line in enumerate(self.file.readlines()):
             # To make this work with bytes objects like TemporaryFile contents
             if isinstance(line, bytes):
                 line = bytes.decode(line, "utf-8")
             line = str(line)
-            if match := option_matcher.match(line):
-                if len(match.groups()) != 2:
-                    continue
+
+            if match := ConfigParser._empty_line_matcher.match(line):
+                continue
+
+            if match := ConfigParser._comment_matcher.match(line):
+                continue
+
+            if match := ConfigParser._option_matcher.match(line):
                 optname = match.group("optname")
                 if optname.lower() in optnames:
                     key = self._convert_from_anycase_to_propercase(optname)
                     config_values[key] = self._optval_to_bool(
                         str(match.group("optval"))
                     )
+                else:
+                    output_line = line.rstrip('\n')
+                    print(f"warning: bad warning name or value in line {line_number}: '{output_line}' in configuration file: '{self.file.name}'", file=sys.stderr)
+            else:
+                output_line = line.rstrip('\n')
+                print(f"warning: unable to parse line {line_number}: '{output_line}' in configuration file: '{self.file.name}'", file=sys.stderr)
+
+
 
         return config_values if len(config_values) > 0 else None
 
