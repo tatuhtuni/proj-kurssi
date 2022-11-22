@@ -28,7 +28,7 @@ jobs:
           PGUSER: postgres
           PGPASSWORD: postgres
 
-  # Publish to PyPI (only on main branch)
+  # Publish to PyPI
   publish:
     needs: pytest
     runs-on: ubuntu-latest
