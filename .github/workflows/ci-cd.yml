@@ -32,8 +32,12 @@ jobs:
   publish:
     needs: pytest
     runs-on: ubuntu-latest
-    # if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v2
       - uses: ./.github/actions/install
-      - run: poetry publish --no-interaction -vvv --build -u __token__ -p ${{ secrets.PYPI_TOKEN }}
+      - shell: bash
+        run: |
+          scripts/cd-publish.sh
+        env:
+          PYPI_USER: __token__
+          PYPI_PASS: ${{ secrets.PYPI_TOKEN }}
