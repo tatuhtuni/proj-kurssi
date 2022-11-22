@@ -1,6 +1,7 @@
 on: push
 
 jobs:
+  # Run PyTest
   pytest:
     runs-on: ubuntu-latest
 
@@ -26,3 +27,13 @@ jobs:
           PGHOST: localhost
           PGUSER: postgres
           PGPASSWORD: postgres
+
+  # Publish to PyPI (only on main branch)
+  publish:
+    needs: pytest
+    runs-on: ubuntu-latest
+    # if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ./.github/actions/install
+      - run: poetry publish --no-interaction -vvv --build -u __token__ -p ${{ secrets.PYPI_TOKEN }}
