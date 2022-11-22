@@ -52,7 +52,8 @@ class ImpliedExpressionChecker:
             return None
 
         warning = "Found impossible comparison due to column/table constraints"
-        warning_name = "ImpliedExpression"
+        warning_name = type(self).__name__.rstrip("Checker")
+
         formatter = ErrorFormatter(warning, warning_name)
         warning_msg = formatter.format()
 

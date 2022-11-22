@@ -5,10 +5,10 @@ from psycopg import Connection
 
 from ..sqlparser import SqlParser
 from ..qepparser import QEPParser
-from ..subquery_orderby_checker import SubqueryOrderByChecker
+from ..subquery_order_by_checker import SubqueryOrderByChecker
 
-CUSTOMERS_TABLE_NAME = "inner_orderby_test_table_customers"
-ORDERS_TABLE_NAME = "inner_orderby_test_table_orders"
+CUSTOMERS_TABLE_NAME = "subquery_order_by_test_table_customers"
+ORDERS_TABLE_NAME = "subquery_order_by_test_table_orders"
 
 # Does not matter all only here so we can get a connection
 
@@ -560,7 +560,7 @@ def qep_parser(postgresql: Connection):
     return QEPParser(conn=postgresql)
 
 
-def test_inner_orderby(sql_parser: SqlParser, qep_parser: QEPParser):
+def test_subquery_order_by(sql_parser: SqlParser, qep_parser: QEPParser):
     SQL_WITHOUT_OUTER_ORDER = \
         f"""
 SELECT *

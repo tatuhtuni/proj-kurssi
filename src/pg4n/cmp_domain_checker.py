@@ -148,7 +148,9 @@ class CmpDomainChecker:
             domain1 = suspicious_cmp_context.a.type.name
             domain2 = suspicious_cmp_context.b.type.name
             warning = f"Comparison between different domains ({domain1}, {domain2})"
-            warning_name = "CmpDomains"
+            # TODO: Develop more principled way of matching warning_name with
+            #       the options expected in the configuration files.
+            warning_name = type(self).__name__.rstrip("Checker")
 
             cmp_exp = suspicious_cmp_context.expression
 

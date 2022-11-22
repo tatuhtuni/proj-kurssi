@@ -25,7 +25,7 @@ class StrangeHavingChecker:
             return None
 
         warning = "HAVING without GROUP BY"
-        warning_name = "StrangeHaving"
+        warning_name = type(self).__name__.rstrip("Checker")
         formatter = ErrorFormatter(warning, warning_name)
         warning_msg = formatter.format()
 

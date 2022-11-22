@@ -34,7 +34,8 @@ class SubquerySelectChecker:
         warning_msg = ""
 
         warning = "No column in subquery SELECT references its tables"
-        warning_name = "SubquerySelect"
+        warning_name = type(self).__name__.rstrip("Checker")
+
 
         for i, nested_condition_context in enumerate(self.nested_condition_contexts):
             whole_statement = str(self.parsed_sql)

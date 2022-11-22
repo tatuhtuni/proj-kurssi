@@ -7,7 +7,7 @@ from .qepparser import QEPAnalysis, QEPParser
 
 # analysis modules
 from .cmp_domain_checker import CmpDomainChecker
-from .subquery_orderby_checker import SubqueryOrderByChecker
+from .subquery_order_by_checker import SubqueryOrderByChecker
 from .subquery_select_checker import SubquerySelectChecker
 from .implied_expression_checker import ImpliedExpressionChecker
 

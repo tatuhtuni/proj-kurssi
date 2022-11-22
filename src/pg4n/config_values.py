@@ -5,8 +5,8 @@ from typing import TypedDict
 class ConfigValues(TypedDict):
     SubquerySelect: bool
     SumDistinct: bool
-    SubqueryOrderby: bool
     StrangeHaving: bool
     CmpDomain: bool
+    SubqueryOrderBy: bool
     ImpliedExpression: bool
     EqWildcard: bool
