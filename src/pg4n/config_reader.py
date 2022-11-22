@@ -15,10 +15,10 @@ class ConfigReader:
 
     def read(self) -> Optional[ConfigValues]:
         """
-        The configuration files are read in order from:
-        /etc/pg4n/config, $XDG_CONFIG_HOME/pg4n/config, or if
-        $XDG_CONFIG_HOME is not set, from $HOME/.config/pg4n/config,
-        each new value introduced in latter files overriding the previous value.
+        The configuration files are read in order from: /etc/pg4n.conf then from
+        $XDG_CONFIG_HOME/pg4n.conf, or if $XDG_CONFIG_HOME is not set, from
+        $HOME/.config/pg4n.conf, and lastly from $PWD/pg4n.conf, with each new
+        value introduced in latter files overriding the previous value.
         """
 
         config_fnames = []
