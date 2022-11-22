@@ -193,7 +193,7 @@ class PsqlParser:
             db_name = stmt_res_list[length - 1][::-1]
 
         # reverse back, concatenate, and remove \n's
-        
+
         # TODO/BUG: removing \n's is a tough problem, see:
         # "pgdb=> SELECT * FROM orders WHERE order_tot
         # al_eur = 100;"
@@ -201,10 +201,10 @@ class PsqlParser:
         # "pgdb=> SELECT
         # * FROM orders WHERE order_total_eur = 100;
         # should parse as \n -> " " to avoid "SELECT* FROM ..".
-        # replacing \n's with "" maybe has less edge cases.
+        # replacing \n's with "" maybe has less edge cases. Or actually more.
         reversed_flattened_res: str = \
             reduce(lambda x, y: x + y[::-1], results, "")
-        no_newlines_res = reversed_flattened_res.replace('\n', '')
+        no_newlines_res = reversed_flattened_res.replace('\n', ' ')
 
         # Is the statement a SELECT statement?
         match_select_stmt: ParserElement = \
