@@ -2,7 +2,7 @@
 
 # https://github.com/python-poetry/poetry/issues/3670#issuecomment-776462445
 
-# If branch is main
+echo "Releasing for branch $GITHUB_REF"
 if [ "$GITHUB_REF" = "refs/heads/main" ]; then
   poetry version --short
 else
