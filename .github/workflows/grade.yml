@@ -11,18 +11,18 @@ jobs:
         id: extract_branch
       - uses: actions/checkout@v2
       - uses: ./.github/actions/install
-      - shell: bash
-        run: |
-          scripts/ci-grade.sh > grade.txt
-        env:
-          GITHUB_TOKEN: ${{ secrets.BOT_SECRET }}
-          GITHUB_BRANCH: ${{ steps.extract_branch.outputs.branch }}
       - name: Wait For Other Pipelines
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: otto-de/github-actions-wait@v1.0
         with:
           step-name: "Wait For Other Pipelines"
+      - shell: bash
+        run: |
+          scripts/ci-grade.sh > grade.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.BOT_SECRET }}
+          GITHUB_BRANCH: ${{ steps.extract_branch.outputs.branch }}
       - name: Comment PR
         uses: marocchino/sticky-pull-request-comment@v2
         with:
