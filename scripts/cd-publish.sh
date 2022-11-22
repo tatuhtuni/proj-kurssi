@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# base on:
+# based on:
 # https://github.com/python-poetry/poetry/issues/3670#issuecomment-776462445
 
 if [ "$GITHUB_REF" = "refs/heads/main" ]; then
