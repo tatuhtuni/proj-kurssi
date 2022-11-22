@@ -2,6 +2,7 @@
 
 # https://github.com/python-poetry/poetry/issues/3670#issuecomment-776462445
 
+echo "Branch name is $BRANCH_NAME"
 if [[ "$BRANCH_NAME" == *main ]]; then
   poetry version --short
 else
