@@ -7,9 +7,13 @@ from .qepparser import QEPAnalysis, QEPParser
 
 # analysis modules
 from .cmp_domain_checker import CmpDomainChecker
+from .eq_wildcard_checker import EqWildcardChecker
+from .implied_expression_checker import ImpliedExpressionChecker
+from .strange_having_checker import StrangeHavingChecker
 from .subquery_orderby_checker import SubqueryOrderByChecker
 from .subquery_select_checker import SubquerySelectChecker
-from .implied_expression_checker import ImpliedExpressionChecker
+from .sum_distinct_checker import SumDistinctChecker
+
 
 class SemanticRouter:
     """Analyze given SQL queries via a plethora of analysis modules."""
@@ -73,8 +77,30 @@ class SemanticRouter:
 
             # Implied expression
             analysis_result = \
-                ImpliedExpressionChecker(sanitized_sql, sql_query, conn).check()
-            
+                ImpliedExpressionChecker(sanitized_sql, sql_query,
+                                         conn).check()
+
+            if analysis_result is not None:
+                return analysis_result
+
+            # Strange HAVING clause without GROUP BY
+            analysis_result = \
+                StrangeHavingChecker(sanitized_sql, qep_analysis).check()
+
+            if analysis_result is not None:
+                return analysis_result
+
+            # SUM/AVG(DISTINCT)
+            analysis_result = \
+                SumDistinctChecker(sanitized_sql, qep_analysis).check()
+
+            if analysis_result is not None:
+                return analysis_result
+
+            # Wildcards without LIKE
+            analysis_result = \
+                EqWildcardChecker(sanitized_sql, qep_analysis).check()
+
             if analysis_result is not None:
                 return analysis_result
 
