@@ -30,7 +30,8 @@ class EqWildcardChecker:
             return None
 
         warning = "Possible use of '=' instead of LIKE for wildcard pattern"
-        warning_name = "EqWildcard"
+        warning_name = type(self).__name__.rstrip("Checker")
+
         formatter = ErrorFormatter(warning, warning_name)
         warning_msg = formatter.format()
 

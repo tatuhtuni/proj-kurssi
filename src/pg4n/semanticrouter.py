@@ -10,7 +10,7 @@ from .cmp_domain_checker import CmpDomainChecker
 from .eq_wildcard_checker import EqWildcardChecker
 from .implied_expression_checker import ImpliedExpressionChecker
 from .strange_having_checker import StrangeHavingChecker
-from .subquery_orderby_checker import SubqueryOrderByChecker
+from .subquery_order_by_checker import SubqueryOrderByChecker
 from .subquery_select_checker import SubquerySelectChecker
 from .sum_distinct_checker import SumDistinctChecker
 

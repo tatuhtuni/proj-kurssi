@@ -12,15 +12,15 @@ def test_parse():
  # # #
 ######   # # #
               ##       3              ## jkelm el el e
-CmpDomains false
-InnerOrderBy true
+CmpDomain false
+SubqueryOrderBy true
 ImpliedExpression yes
 
-INNERORDERBY true
-innerorderby true
+SUBQUERYORDERBY true
+subqueryorderby true
 
 
-iNnErOrDeRbY true
+SuBqUeRyOrDeRbY true
 
 # Gives too many false positives
 SubquerySelect 0
@@ -38,9 +38,11 @@ SubquerySelect 0
         assert config_values is not None
 
         try:
+            from pprint import pprint
+            pprint(config_values)
             assert config_values["ImpliedExpression"] == True
-            assert config_values["CmpDomains"] == False
-            assert config_values["InnerOrderBy"] == True
+            assert config_values["CmpDomain"] == False
+            assert config_values["SubqueryOrderBy"] == True
             assert config_values["SubquerySelect"] == False
         except Exception as e:
             assert False, f"{e}"
@@ -52,14 +54,14 @@ SubquerySelect 0
 # This is the config file
 #     CONFIG1 = """ImpliedExpression false
 # ImpliedExpression 1
-# CmpDomains false
-# InnerOrderBy true
-# InnerOrderBy true
-# InnerOrderBy true
-# InnerOrderBy true
-# InnerOrderBy true
+# CmpDomain false
+# SubqueryOrderBy true
+# SubqueryOrderBy true
+# SubqueryOrderBy true
+# SubqueryOrderBy true
+# SubqueryOrderBy true
 
-# InnerOrderBy true
+# SubqueryOrderBy true
 # SubquerySelect yes
 # """
 
@@ -68,12 +70,12 @@ SubquerySelect 0
 # configuration file output is not tested because its system dependent
 # warning_matcher = re.compile(\
 # """
-# line 4: 'InnerOrderBy true'
-# line 5: 'InnerOrderBy true'
-# line 6: 'InnerOrderBy true'
-# line 7: 'InnerOrderBy true'
-# line 8: 'InnerOrderBy true'
-# line 10: 'InnerOrderBy true'
+# line 4: 'SubqueryOrderBy true'
+# line 5: 'SubqueryOrderBy true'
+# line 6: 'SubqueryOrderBy true'
+# line 7: 'SubqueryOrderBy true'
+# line 8: 'SubqueryOrderBy true'
+# line 10: 'SubqueryOrderBy true'
 # in configuration file: '.*'
 # warning: option 'ImpliedExpression' is set multiple times
 # line 1: 'ImpliedExpression false'

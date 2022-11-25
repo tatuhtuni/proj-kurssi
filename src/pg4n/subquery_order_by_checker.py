@@ -31,7 +31,7 @@ class SubqueryOrderByChecker:
             return None
 
         warning = "ORDER BY in a subquery"
-        warning_name = "InnerOrderBy"
+        warning_name = type(self).__name__.rstrip("Checker")
         formatter = ErrorFormatter(warning, warning_name)
         warning_msg = formatter.format()
 
