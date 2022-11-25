@@ -7,6 +7,7 @@ This README is meant for developers of the project, and not for end users. For e
 - [PostgreSQL for novices](#postgresql-for-novices)
   - [Notes for developers](#notes-for-developers)
     - [Poetry](#poetry)
+      - [Versioning](#versioning)
     - [Imports](#imports)
     - [Running tests](#running-tests)
       - [Using docker](#using-docker)
@@ -24,6 +25,12 @@ This project uses [Poetry](https://python-poetry.org/) for packaging. Although o
 - To add/remove a dependency, type `poetry add <dep>`/`poetry remove <dep>`.
 - To execute a command from within virtual environment shell, type `poetry run <cmd>`.
 - To enter a shell session within the Poetry virtual environment, type `poetry shell`.
+
+#### Versioning
+
+You can bump the version number automatically with `poetry version patch`, `poetry version minor`, etc. See `poetry version -h`.
+
+See version history [here](https://pypi.org/project/pg4n/#history).
 
 ### Imports
 

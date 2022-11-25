@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pg4n"
-version = "0.1.1"
+version = "0.1.2"
 description = "PostgreSQL for novices - helps debug PostgreSQL queries"
 authors = [
     "Jesper Niemelä <jesper.niemela@tuni.fi>",
