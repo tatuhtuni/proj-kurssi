@@ -34,6 +34,8 @@ class ImpliedExpressionChecker:
             QEPParser(conn=self.db_connection, constraint_exclusion=True)
         qep_analysis_with_constraint_exclusion = \
             qep_parser_with_constraint_exclusion.parse(self.sql_statement)
+        if qep_analysis_with_constraint_exclusion is None:
+            return None
         has_onetime_filter_with_constraint_exclusion = \
             len(qep_analysis_with_constraint_exclusion.root.rfind(finder)) > 0
 
@@ -41,6 +43,8 @@ class ImpliedExpressionChecker:
             QEPParser(conn=self.db_connection, constraint_exclusion=False)
         qep_analysis_without_constraint_exclusion = \
             qep_parser_without_constraint_exclusion.parse(self.sql_statement)
+        if qep_analysis_without_constraint_exclusion is None:
+            return None
         has_onetime_filter_without_constraint_exclusion = \
             len(qep_analysis_without_constraint_exclusion.root.rfind(finder)) > 0
 

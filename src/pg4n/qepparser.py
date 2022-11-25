@@ -167,12 +167,18 @@ class QEPParser:
         # use constraint_exclusion to avoid unnecessary index scans
         if constraint_exclusion:
             with self._conn.cursor() as cur:
-                cur.execute("set constraint_exclusion = on;")
-                self._conn.commit()
+                try:
+                    cur.execute("set constraint_exclusion = on;")
+                    self._conn.commit()
+                except Exception as e:
+                    self._conn.rollback()
         else:
             with self._conn.cursor() as cur:
-                cur.execute("set constraint_exclusion = off;")
-                self._conn.commit()
+                try:
+                    cur.execute("set constraint_exclusion = off;")
+                    self._conn.commit()
+                except Exception as e:
+                    self._conn.rollback()
 
     def __del__(self):
         if not self._ref:
@@ -190,21 +196,26 @@ class QEPParser:
         Returns:
             A dictionary representing the query execution plan.
         """
-        stmt = "explain (format json, analyze, verbose)" + \
+        stmt = "explain (format json, analyze, verbose) " + \
             stmt.strip().rstrip(';') + ";"
-        with self._conn.cursor() as cur:
-            cur.execute(stmt, *args, **kwargs)
-            res = cur.fetchall()
+        from psycopg import ProgrammingError
+        try:
+            with self._conn.cursor() as cur:
+                cur.execute(stmt, *args, **kwargs)
+                res = cur.fetchall()
+                self._conn.rollback()
+                if (n := len(res)) != 1:
+                    raise ValueError(f"Expected 1 row, got {n}")
+                if (n := len(res[0])) != 1:
+                    raise ValueError(f"Expected 1 column, got {n}")
+                if (n := len(res[0][0])) != 1:
+                    raise ValueError(f"Expected 1 item in column, got {n}")
+                if (t := type(res[0][0][0])) != dict:
+                    raise ValueError(f"Expected dict in column, got {t}")
+                return QEPAnalysis(res[0][0][0])
+        except ProgrammingError as e:
             self._conn.rollback()
-            if (n := len(res)) != 1:
-                raise ValueError(f"Expected 1 row, got {n}")
-            if (n := len(res[0])) != 1:
-                raise ValueError(f"Expected 1 column, got {n}")
-            if (n := len(res[0][0])) != 1:
-                raise ValueError(f"Expected 1 item in column, got {n}")
-            if (t := type(res[0][0][0])) != dict:
-                raise ValueError(f"Expected dict in column, got {t}")
-            return QEPAnalysis(res[0][0][0])
+
 
     def parse(self, stmt: str, *args, **kwargs) -> QEPAnalysis:
         '''Alias for __call__'''
