@@ -540,16 +540,260 @@ def load_database(**kwargs):
         insert into e31_test_table_orders (order_id, order_total_eur, customer_id) values (250, 367.56, 214);""")
         conn.commit()
 
+TYPE_TEST_TABLE_NAME = "sqlparser_datatype_test_table"
+
+def load_datatypedb(**kwargs):
+    conn: Connection = psycopg.connect(**kwargs)
+
+    with conn.cursor() as cur:
+        cur.execute(
+            f"""
+        DROP TABLE IF EXISTS {TYPE_TEST_TABLE_NAME};
+
+        CREATE TABLE {TYPE_TEST_TABLE_NAME} (
+            test_type_id INT,
+            type_bigint BIGINT,
+            type_int8 INT8,
+            type_bigserial BIGSERIAL,
+            type_serial8 SERIAL8,
+            type_bit BIT,
+            type_bit20 BIT(20),
+            type_bitvarying BIT VARYING,
+            type_bitvarying20 BIT VARYING(20),
+            type_varbit VARBIT,
+            type_varbit20 VARBIT(20),
+            type_boolean BOOLEAN,
+            type_bool BOOL,
+            type_box BOX,
+            type_bytea BYTEA,
+            type_character CHARACTER,
+            type_character20 CHARACTER(20),
+            type_char CHAR,
+            type_char20 CHAR(20),
+            type_charactervarying CHARACTER VARYING,
+            type_charactervarying20 CHARACTER VARYING(20),
+            type_varchar VARCHAR,
+            type_varchar20 VARCHAR(20),
+            type_cidr CIDR,
+            type_circle CIRCLE,
+            type_date DATE,
+            type_double_precision DOUBLE PRECISION,
+            type_float8 FLOAT8,
+            type_inet INET,
+            type_integer INTEGER,
+            type_int INT,
+            type_int4 INT4,
+            type_interval INTERVAL,
+            type_json JSON,
+            type_jsonb JSONB,
+            type_line LINE,
+            type_lseg LSEG,
+            type_macaddr MACADDR,
+            type_macaddr8 MACADDR8,
+            type_money MONEY,
+            type_numeric NUMERIC,
+            type_numeric83 NUMERIC(8,3),
+            type_decimal DECIMAL,
+            type_decimal83 DECIMAL(8,3),
+            type_path PATH,
+            type_point POINT,
+            type_polygon POLYGON,
+            type_real REAL,
+            type_float4 FLOAT4,
+            type_smallint SMALLINT,
+            type_int2 INT2,
+            type_smallserial SMALLSERIAL,
+            type_serial2 SERIAL2,
+            type_serial SERIAL,
+            type_serial4 SERIAL4,
+            type_text TEXT,
+            type_time TIME,
+            type_time4 TIME(4),
+            type_time_without_time_zone TIME WITHOUT TIME ZONE,
+            type_time4_without_time_zone TIME(4) WITHOUT TIME ZONE,
+            type_time_with_time_zone TIME WITH TIME ZONE,
+            type_time4_with_time_zone TIME(4) WITH TIME ZONE,
+            type_timetz TIMETZ,
+            type_timetz4 TIMETZ(4),
+            type_timestamp TIMESTAMP,
+            type_timestamp4 TIMESTAMP(4),
+            type_timestamp_without_time_zone TIMESTAMP WITHOUT TIME ZONE,
+            type_timestamp4_without_time_zone TIMESTAMP(4) WITHOUT TIME ZONE,
+            type_timestamp_with_time_zone TIMESTAMP WITH TIME ZONE,
+            type_timestamp4_with_time_zone TIMESTAMP(4) WITH TIME ZONE,
+            type_timestamptz TIMESTAMPTZ,
+            type_timestamptz4 TIMESTAMPTZ(4),
+            type_tsquery TSQUERY,
+            type_tsvector TSVECTOR,
+            type_uuid UUID,
+            type_xml XML,
+            PRIMARY KEY (test_type_id)
+        );
+
+        INSERT INTO {TYPE_TEST_TABLE_NAME} (
+            test_type_id,
+            type_bigint,
+            type_int8,
+            type_bit,
+            type_bit20,
+            type_bitvarying,
+            type_bitvarying20,
+            type_varbit,
+            type_varbit20,
+            type_boolean,
+            type_bool,
+            type_box,
+            type_bytea,
+            type_character,
+            type_character20,
+            type_char,
+            type_char20,
+            type_charactervarying,
+            type_charactervarying20,
+            type_varchar,
+            type_varchar20,
+            type_cidr,
+            type_circle,
+            type_date,
+            type_double_precision,
+            type_float8,
+            type_inet,
+            type_integer,
+            type_int,
+            type_int4,
+            type_interval,
+            type_json,
+            type_jsonb,
+            type_line,
+            type_lseg,
+            type_macaddr,
+            type_macaddr8,
+            type_money,
+            type_numeric,
+            type_numeric83,
+            type_decimal,
+            type_decimal83,
+            type_path,
+            type_point,
+            type_polygon,
+            type_real,
+            type_float4,
+            type_smallint,
+            type_int2,
+            type_text,
+            type_time,
+            type_time4,
+            type_time_without_time_zone,
+            type_time4_without_time_zone,
+            type_time_with_time_zone,
+            type_time4_with_time_zone,
+            type_timetz,
+            type_timetz4,
+            type_timestamp,
+            type_timestamp4,
+            type_timestamp_without_time_zone,
+            type_timestamp4_without_time_zone,
+            type_timestamp_with_time_zone,
+            type_timestamp4_with_time_zone,
+            type_timestamptz,
+            type_timestamptz4,
+            type_tsquery,
+            type_tsvector,
+            type_uuid,
+            type_xml)
+        VALUES (
+            2,
+            1000000000000,
+            1000000000000,
+            '1',
+            '00000000111000000000',
+            '0101',
+            '01010101010101010101',
+            '1010',
+            '10101010101010101010',
+            TRUE,
+            FALSE,
+            '((0, 0), (1, 1))'::box,
+            '\\000'::bytea,
+            'c',
+            'character20',
+            'C',
+            'char20',
+            'character varying',
+            'character varying20',
+            'varchar',
+            'varchar20',
+            '127.0.0.1',
+            '((0, 0), 1)'::circle,
+            '1999-01-08',
+            2.2,
+            38.001,
+            '10.1.2.3/32',
+            12,
+            14,
+            18,
+            '1 year 2 months 3 days 4 hours 5 minutes 6 seconds',
+            '{{\"foo\": [\"bar\", \"baz\", false, 0.0]}}',
+            '[1, 2, 3]'::jsonb,
+            '{{1, 1, 2}}'::line,
+            '((-1, -1), (1, 1))'::lseg,
+            '08-00-2b-01-02-03',
+            '08002b:0102030405',
+            '12.8'::money,
+            12.4,
+            100.12345,
+            12.1,
+            200.54321,
+            '((-1, -1), (-1, 1), (0, 1))'::path,
+            '(0, 0)'::point,
+            '((0, 1), (-1, -1), (-1, 1))'::polygon,
+            0.01,
+            0.04,
+            10,
+            14,
+            'text',
+            '04:05:06.789',
+            '04:05:06.7891',
+            '08:05:06.789',
+            '08:05:06.7891',
+            '08:05:06.789+02',
+            '08:05:06.7891+02',
+            '11:05:06.789+02',
+            '11:05:06.7891+02',
+            current_timestamp,
+            current_timestamp,
+            current_timestamp,
+            current_timestamp,
+            current_timestamp,
+            current_timestamp,
+            current_timestamp,
+            current_timestamp,
+            'fat & rat'::tsquery,
+            'a fat cat sat on a mat and ate a fat rat'::tsvector,
+            'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'::uuid,
+            '<foo>bar</foo>'::xml
+            );""")
+        conn.commit()
+
 
 factory = factories.postgresql_proc(
     load=[load_database],
 )
 postgresql = factories.postgresql("factory")
 
+datatypedb_factory = factories.postgresql_proc(
+    load=[load_datatypedb],
+)
+datatypedb = factories.postgresql("datatypedb_factory")
 
-@pytest.fixture
+# scope="function" weakens pytest magic
+@pytest.fixture(scope="function")
 def sql_parser(postgresql: Connection):
     return sqlparser.SqlParser(db_connection=postgresql)
+
+@pytest.fixture(scope="function")
+def sql_parser_datatypedb(datatypedb: Connection):
+    return sqlparser.SqlParser(db_connection=datatypedb)
 
 
 IMPOSSIBLE_STATEMENT = \
@@ -563,7 +807,7 @@ CREATE TABLE dummy (
     hype CHAR(1) CHECK (hype = ANY (ARRAY['X'::bpchar, 'Y'::bpchar]))
     );"""
 
-
+@pytest.mark.usefixtures("sql_parser")
 def test_parse_one(sql_parser: sqlparser.SqlParser):
     parser = sql_parser
 
@@ -580,6 +824,7 @@ def test_parse_one(sql_parser: sqlparser.SqlParser):
         assert False, f"exception: {e}"
 
 
+@pytest.mark.usefixtures("sql_parser")
 def test_parse(sql_parser: sqlparser.SqlParser):
     parser = sql_parser
 
@@ -596,6 +841,7 @@ def test_parse(sql_parser: sqlparser.SqlParser):
         assert False, f"exception: {e}"
 
 
+@pytest.mark.usefixtures("sql_parser")
 def test_get_root_node(sql_parser: sqlparser.SqlParser):
     parser = sql_parser
 
@@ -619,6 +865,7 @@ ORDER BY courses_completed;"""
         parsed_sql.find(exp.Identifier))) == exp.Select
 
 
+@pytest.mark.usefixtures("sql_parser")
 def test_find_all_table_names(sql_parser: sqlparser.SqlParser):
     parser = sql_parser
 
@@ -667,6 +914,7 @@ SELECT (1, 2, 3);"""
     assert len(table_names) == 0
 
 
+@pytest.mark.usefixtures("sql_parser")
 def test_get_query_columns(sql_parser: sqlparser.SqlParser):
     parser = sql_parser
 
@@ -691,6 +939,7 @@ ORDER BY c.customer_id;"""
     assert len(columns) == expected_total_columns
 
 
+@pytest.mark.usefixtures("sql_parser")
 def test_get_column_name_from_column_expression(sql_parser: sqlparser.SqlParser):
     BORING_STATEMENT = \
         """
@@ -708,6 +957,7 @@ ORDER BY c.nickname;"""
     assert column_name == "customer_id"
 
 
+@pytest.mark.usefixtures("sql_parser")
 def test_find_where_predicates(sql_parser: sqlparser.SqlParser):
     NESTED_WHERE = \
         """
@@ -728,3 +978,27 @@ WHERE (order_total_eur = order_total_eur) AND
     assert exp.In in predicate_types
     assert exp.EQ in predicate_types
     assert exp.GT in predicate_types
+
+
+@pytest.mark.usefixtures("sql_parser_datatypedb")
+def test_datatypes(sql_parser_datatypedb: sqlparser.SqlParser):
+    SIMPLE_STATEMENT = \
+f"""
+SELECT (1,2,3);"""
+
+    SELECT_STATEMENT = \
+f"""
+SELECT *
+FROM {TYPE_TEST_TABLE_NAME};"""
+
+    parser = sql_parser_datatypedb
+    try:
+        parsed_sql = parser.parse_one(SIMPLE_STATEMENT)
+    except Exception as e:
+        assert False, f"exception: {e}"
+
+    try:
+        parsed_sql = parser.parse_one(SELECT_STATEMENT)
+        columns = parser.get_query_columns(parsed_sql)
+    except Exception as e:
+        assert False, f"exception: {e}"

@@ -166,7 +166,6 @@ class SqlParser:
 
         # transforms 1-element tuples to just list of elements
         column_names = [x[0] for x in column_names]
-        #        print(f"column_names: {column_names}")
 
         return column_names
 
@@ -207,7 +206,6 @@ WHERE
 
         # transforms 1-element tuples to just list of elements
         type_names = [x[0] for x in type_names]
-        #        print(f"type_names: {type_names}")
 
         parseable_type_names = self._convert_from_internal_types(type_names)
 
@@ -224,43 +222,178 @@ WHERE
         """
 
         converted_types = []
-        character_matcher = re.compile(r"^(?:character|char)\(\s*(\d+)\s*\)$")
+
+        #  +----------------------------------------------------------+
+        #  | TRIVIAL_MATCHERS                                         |
+        #  +----------------------------------------------------------+
+        int_matcher = re.compile(r"^(?:int|integer|int4)$", re.IGNORECASE)
+        smallint_matcher = re.compile(r"^(?:smallint|int2)$", re.IGNORECASE)
+        bigint_matcher = re.compile(r"^(?:bigint|int8)$", re.IGNORECASE)
+        bool_matcher = re.compile(r"^(?:boolean|bool)$")
+        real_matcher = re.compile(r"^(?:real|float4)$")
+        bytea_matcher = re.compile(r"^(?:bytea)$")
+        money_matcher = re.compile(r"^(?:money)$")
+        date_matcher = re.compile(r"^(?:date)$")
+        cidr_matcher = re.compile(r"^(?:cidr)$")
+        inet_matcher = re.compile(r"^(?:inet)$")
+        json_matcher = re.compile(r"^(?:json)$")
+        jsonb_matcher = re.compile(r"^(?:jsonb)$")
+        macaddr_matcher = re.compile(r"^(?:macaddr)$")
+        macaddr8_matcher = re.compile(r"^(?:macaddr8)$")
+        double_precission_matcher = re.compile(r"^(?:(?:double precision)|float8)$")
+        text_matcher = re.compile(r"^(?:text)$")
+        tsquery_matcher = re.compile(r"^(?:tsquery)$")
+        tsvector_matcher = re.compile(r"^(?:tsvector)$")
+        uuid_matcher = re.compile(r"^(?:uuid)$")
+        xml_matcher = re.compile(r"^(?:xml)$")
+        circle_matcher = re.compile(r"^(?:circle)$")
+        box_matcher = re.compile(r"^(?:box)$")
+        path_matcher = re.compile(r"^(?:path)$")
+        line_matcher = re.compile(r"^(?:line)$")
+        lseg_matcher = re.compile(r"^(?:lseg)$")
+        point_matcher = re.compile(r"^(?:point)$")
+        polygon_matcher = re.compile(r"^(?:polygon)$")
+        interval_matcher = re.compile(r"^(?:interval)$")
+
+
+        #  +----------------------------------------------------------+
+        #  | OPT_PRECISSION_MATCHERS                                  |
+        #  +----------------------------------------------------------+
+        character_matcher = re.compile(r"^(?:character|char)(?:\(\s*(\d+)\s*\))?$")
+        bit_matcher = re.compile(r"^(?:bit)(?:\(\s*(\d+)\s*\))?$")
         varchar_matcher = re.compile(
-            r"^(?:(?:character varying)|varchar)\(\s*(\d+)\s*\)$"
+            r"^(?:(?:character varying)|varchar)(?:\(\s*(\d+)\s*\))?$"
         )
+        varbit_matcher = re.compile(r"^(?:(?:bit varying)|varbit)(?:\(\s*(\d+)\s*\))?$")
+
+        timestamp_matcher = re.compile(
+            r"^timestamp(?:\(\s*(\d+)\s*\))?(?: without time zone)?$"
+        )
+        timestamptz_matcher = re.compile(
+            r"^(?:timestamp|timestamptz)(?:\(\s*(\d+)\s*\))?(?: with time zone)?$"
+        )
+        time_matcher = re.compile(r"^time(?:\(\s*(\d+)\s*\))?(?: without time zone)?$")
+        timetz_matcher = re.compile(
+            r"^(?:time|timetz)(?:\(\s*(\d+)\s*\))?(?: with time zone)?$"
+        )
+
+        #  +----------------------------------------------------------+
+        #  | COMPLEX_MATCHERS                                         |
+        #  +----------------------------------------------------------+
         numeric_matcher = re.compile(
-            r"^(?:numeric|decimal)\s*\(\s*(\d+)(?:\s*,\s*(\d+))?\s*\)$"
+            r"^(?:numeric|decimal)(?:\(\s*(\d+)(?:\s*,\s*(\d+))?\s*\))?$"
         )
 
         for type_name in type_names:
-            if type_name == "integer":
+            #  +----------------------------------------------------------+
+            #  | TRIVIAL_CASES                                            |
+            #  +----------------------------------------------------------+
+            if match := int_matcher.match(type_name):
                 converted_types.append(PostgreSQLDataType("INT", None, None))
-            elif type_name == "character":
-                converted_types.append(PostgreSQLDataType("CHAR", None, None))
-            elif type_name == "char":
-                converted_types.append(PostgreSQLDataType("CHAR", None, None))
+            elif match := smallint_matcher.match(type_name):
+                converted_types.append(PostgreSQLDataType("SMALLINT", None, None))
+            elif match := bigint_matcher.match(type_name):
+                converted_types.append(PostgreSQLDataType("BIGINT", None, None))
+            elif match := bool_matcher.match(type_name):
+                converted_types.append(PostgreSQLDataType("BOOL", None, None))
+            elif match := real_matcher.match(type_name):
+                converted_types.append(PostgreSQLDataType("REAL", None, None))
+            elif match := bytea_matcher.match(type_name):
+                converted_types.append(PostgreSQLDataType("BYTEA", None, None))
+            elif match := money_matcher.match(type_name):
+                converted_types.append(PostgreSQLDataType("MONEY", None, None))
+            elif match := date_matcher.match(type_name):
+                converted_types.append(PostgreSQLDataType("DATE", None, None))
+            elif match := cidr_matcher.match(type_name):
+                converted_types.append(PostgreSQLDataType("CIDR", None, None))
+            elif match := inet_matcher.match(type_name):
+                converted_types.append(PostgreSQLDataType("INET", None, None))
+            elif match := json_matcher.match(type_name):
+                converted_types.append(PostgreSQLDataType("JSON", None, None))
+            elif match := jsonb_matcher.match(type_name):
+                converted_types.append(PostgreSQLDataType("JSONB", None, None))
+            elif match := macaddr_matcher.match(type_name):
+                converted_types.append(PostgreSQLDataType("MACADDR", None, None))
+            elif match := macaddr8_matcher.match(type_name):
+                converted_types.append(PostgreSQLDataType("MACADDR8", None, None))
+            elif match := double_precission_matcher.match(type_name):
+                converted_types.append(PostgreSQLDataType("DOUBLE_PRECISSION", None, None))
+            elif match := text_matcher.match(type_name):
+                converted_types.append(PostgreSQLDataType("TEXT", None, None))
+            elif match := tsquery_matcher.match(type_name):
+                converted_types.append(PostgreSQLDataType("TSQUERY", None, None))
+            elif match := tsvector_matcher.match(type_name):
+                converted_types.append(PostgreSQLDataType("TSVECTOR", None, None))
+            elif match := uuid_matcher.match(type_name):
+                converted_types.append(PostgreSQLDataType("UUID", None, None))
+            elif match := xml_matcher.match(type_name):
+                converted_types.append(PostgreSQLDataType("XML", None, None))
+            elif match := circle_matcher.match(type_name):
+                converted_types.append(PostgreSQLDataType("CIRCLE", None, None))
+            elif match := box_matcher.match(type_name):
+                converted_types.append(PostgreSQLDataType("BOX", None, None))
+            elif match := path_matcher.match(type_name):
+                converted_types.append(PostgreSQLDataType("PATH", None, None))
+            elif match := line_matcher.match(type_name):
+                converted_types.append(PostgreSQLDataType("LINE", None, None))
+            elif match := lseg_matcher.match(type_name):
+                converted_types.append(PostgreSQLDataType("LSEG", None, None))
+            elif match := point_matcher.match(type_name):
+                converted_types.append(PostgreSQLDataType("POINT", None, None))
+            elif match := polygon_matcher.match(type_name):
+                converted_types.append(PostgreSQLDataType("POLYGON", None, None))
+            elif match := interval_matcher.match(type_name):
+                converted_types.append(PostgreSQLDataType("INTERVAL", None, None))
+
+            #  +----------------------------------------------------------+
+            #  | OPT_PRECISSION_CASES                                     |
+            #  +----------------------------------------------------------+
             elif match := character_matcher.match(type_name):
-                conv_type = PostgreSQLDataType(
-                    f"CHAR({match.group(1)})", int(match.group(1)), None
+                converted_types.append(
+                    self._eval_opt_precission_field_match(match, "CHAR")
                 )
-                converted_types.append(conv_type)
-
+            elif match := bit_matcher.match(type_name):
+                converted_types.append(
+                    self._eval_opt_precission_field_match(match, "BIT")
+                )
             elif match := varchar_matcher.match(type_name):
-                conv_type = PostgreSQLDataType(
-                    f"VARCHAR({match.group(1)})", int(match.group(1)), None
+                converted_types.append(
+                    self._eval_opt_precission_field_match(match, "VARCHAR")
                 )
-                converted_types.append(conv_type)
+            elif match := varbit_matcher.match(type_name):
+                converted_types.append(
+                    self._eval_opt_precission_field_match(match, "VARBIT")
+                )
+            elif match := timestamp_matcher.match(type_name):
+                converted_types.append(
+                    self._eval_opt_precission_field_match(match, "TIMESTAMP")
+                )
+            elif match := timestamptz_matcher.match(type_name):
+                converted_types.append(
+                    self._eval_opt_precission_field_match(match, "TIMESTAMPTZ")
+                )
+            elif match := time_matcher.match(type_name):
+                converted_types.append(
+                    self._eval_opt_precission_field_match(match, "TIME")
+                )
+            elif match := timetz_matcher.match(type_name):
+                converted_types.append(
+                    self._eval_opt_precission_field_match(match, "TIMETZ")
+                )
 
+            #  +----------------------------------------------------------+
+            #  | COMPLEX_CASES                                            |
+            #  +----------------------------------------------------------+
             elif match := numeric_matcher.match(type_name):
-                num_groups = len(match.groups())
-                if num_groups == 1:
-                    conv_type = PostgreSQLDataType(
-                        f"NUMERIC({match.group(1)})", int(match.group(1)), None
-                    )
+                if match.group(1) is None and match.group(2) is None:
+                    conv_type = PostgreSQLDataType("DECIMAL", None, None)
                     converted_types.append(conv_type)
-
-                elif num_groups == 2:
-                    name = f"NUMERIC({match.group(1)},{match.group(2)})"
+                elif match.group(1) is not None and match.group(2) is None:
+                    conv_type = PostgreSQLDataType(
+                        f"DECIMAL({match.group(1)})", int(match.group(1)), None
+                    )
+                elif match.group(1) is not None and match.group(2) is not None:
+                    name = f"DECIMAL({match.group(1)},{match.group(2)})"
                     conv_type = PostgreSQLDataType(
                         name, int(match.group(1)), int(match.group(2))
                     )
@@ -268,7 +401,7 @@ WHERE
                 else:
                     # TODO: proper error handling
                     print(
-                        f"unrecognized number '{num_groups}' of arguments for numeric() column type",
+                        f"unrecognized number type format '{type_name}' for numeric() column type",
                         file=sys.stderr,
                     )
                     exit(1)
@@ -281,3 +414,15 @@ WHERE
                 exit(1)
 
         return converted_types
+
+    def _eval_opt_precission_field_match(
+        self, match: re.Match, type_name_prefix: str
+    ) -> PostgreSQLDataType:
+        """
+        Evaluates a internal type of the form: '<typename>[ (p) ]'
+        where p is optional precission field and returns a converted type used
+        "normalized" in the context of this program's conventions.
+        """
+        if match.group(1) is None:
+            return PostgreSQLDataType("TIMESTAMPTZ", None, None)
+        return PostgreSQLDataType(f"{type_name_prefix}({match.group(1)})", int(match.group(1)), None)
