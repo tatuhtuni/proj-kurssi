@@ -1,12 +1,12 @@
-import sys
 import re
+import sys
 from dataclasses import dataclass
 from typing import Optional
 
+import psycopg
 import sqlglot
 import sqlglot.expressions as exp
 from sqlglot.dialects.postgres import Postgres
-import psycopg
 
 
 @dataclass(frozen=True)
@@ -255,7 +255,6 @@ WHERE
         polygon_matcher = re.compile(r"^(?:polygon)$")
         interval_matcher = re.compile(r"^(?:interval)$")
 
-
         #  +----------------------------------------------------------+
         #  | OPT_PRECISSION_MATCHERS                                  |
         #  +----------------------------------------------------------+
@@ -317,7 +316,9 @@ WHERE
             elif match := macaddr8_matcher.match(type_name):
                 converted_types.append(PostgreSQLDataType("MACADDR8", None, None))
             elif match := double_precission_matcher.match(type_name):
-                converted_types.append(PostgreSQLDataType("DOUBLE_PRECISSION", None, None))
+                converted_types.append(
+                    PostgreSQLDataType("DOUBLE_PRECISSION", None, None)
+                )
             elif match := text_matcher.match(type_name):
                 converted_types.append(PostgreSQLDataType("TEXT", None, None))
             elif match := tsquery_matcher.match(type_name):
@@ -425,4 +426,6 @@ WHERE
         """
         if match.group(1) is None:
             return PostgreSQLDataType("TIMESTAMPTZ", None, None)
-        return PostgreSQLDataType(f"{type_name_prefix}({match.group(1)})", int(match.group(1)), None)
+        return PostgreSQLDataType(
+            f"{type_name_prefix}({match.group(1)})", int(match.group(1)), None
+        )

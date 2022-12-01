@@ -1,16 +1,15 @@
-import pytest
-from os import getenv
-from pytest_postgresql import factories
 import psycopg
-from psycopg import Connection
-import sqlglot
+import pytest
 import sqlglot.expressions as exp
+from psycopg import Connection
+from pytest_postgresql import factories
 
 from .. import sqlparser
 
 
 def load_database(**kwargs):
     conn: Connection = psycopg.connect(**kwargs)
+    # pylint: disable=line-too-long
 
     with conn.cursor() as cur:
         cur.execute(
@@ -537,10 +536,13 @@ def load_database(**kwargs):
         insert into e31_test_table_orders (order_id, order_total_eur, customer_id) values (247, 123.55, 179);
         insert into e31_test_table_orders (order_id, order_total_eur, customer_id) values (248, 321.97, 195);
         insert into e31_test_table_orders (order_id, order_total_eur, customer_id) values (249, 491.05, 63);
-        insert into e31_test_table_orders (order_id, order_total_eur, customer_id) values (250, 367.56, 214);""")
+        insert into e31_test_table_orders (order_id, order_total_eur, customer_id) values (250, 367.56, 214);"""
+        )
         conn.commit()
 
+
 TYPE_TEST_TABLE_NAME = "sqlparser_datatype_test_table"
+
 
 def load_datatypedb(**kwargs):
     conn: Connection = psycopg.connect(**kwargs)
@@ -772,7 +774,8 @@ def load_datatypedb(**kwargs):
             'a fat cat sat on a mat and ate a fat rat'::tsvector,
             'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'::uuid,
             '<foo>bar</foo>'::xml
-            );""")
+            );"""
+        )
         conn.commit()
 
 
@@ -791,21 +794,21 @@ datatypedb = factories.postgresql("datatypedb_factory")
 def sql_parser(postgresql: Connection):
     return sqlparser.SqlParser(db_connection=postgresql)
 
+
 @pytest.fixture(scope="function")
 def sql_parser_datatypedb(datatypedb: Connection):
     return sqlparser.SqlParser(db_connection=datatypedb)
 
 
-IMPOSSIBLE_STATEMENT = \
-    """
+IMPOSSIBLE_STATEMENT = """
 SELECT * FROM orders
     WHERE order_total_eur = 0 AND order_total_eur = 100;"""
 
-CHECK_CONSTRAINT = \
-    """
+CHECK_CONSTRAINT = """
 CREATE TABLE dummy (
     hype CHAR(1) CHECK (hype = ANY (ARRAY['X'::bpchar, 'Y'::bpchar]))
     );"""
+
 
 @pytest.mark.usefixtures("sql_parser")
 def test_parse_one(sql_parser: sqlparser.SqlParser):
@@ -845,8 +848,7 @@ def test_parse(sql_parser: sqlparser.SqlParser):
 def test_get_root_node(sql_parser: sqlparser.SqlParser):
     parser = sql_parser
 
-    BORING_STATEMENT = \
-        """
+    BORING_STATEMENT = """
 SELECT student_nro
 FROM students
 WHERE age > 22
@@ -856,13 +858,11 @@ ORDER BY courses_completed;"""
 
     # exp.Select must always be the root node no matter what kind of node we have
     assert type(parser.get_root_node(parsed_sql)) == exp.Select
-    assert type(parser.get_root_node(
-        parsed_sql.find(exp.Select))) == exp.Select
+    assert type(parser.get_root_node(parsed_sql.find(exp.Select))) == exp.Select
     assert type(parser.get_root_node(parsed_sql.find(exp.From))) == exp.Select
     assert type(parser.get_root_node(parsed_sql.find(exp.Where))) == exp.Select
     assert type(parser.get_root_node(parsed_sql.find(exp.Order))) == exp.Select
-    assert type(parser.get_root_node(
-        parsed_sql.find(exp.Identifier))) == exp.Select
+    assert type(parser.get_root_node(parsed_sql.find(exp.Identifier))) == exp.Select
 
 
 @pytest.mark.usefixtures("sql_parser")
@@ -873,15 +873,13 @@ def test_find_all_table_names(sql_parser: sqlparser.SqlParser):
     table2_name = "teachers"
     table3_name = "others"
 
-    SINGLE_TABLE_STATEMENT = \
-        f"""
+    SINGLE_TABLE_STATEMENT = f"""
 SELECT student_nro
 FROM {table1_name}
 WHERE age > 22
 ORDER BY courses_completed;"""
 
-    THREE_TABLE_STATEMENT = \
-        f"""
+    THREE_TABLE_STATEMENT = f"""
 SELECT student_nro
 FROM {table1_name} AS t1
 INNER JOIN {table2_name} AS t2
@@ -890,8 +888,7 @@ INNER JOIN {table3_name} AS t3
     ON t2.salary < t3.salary
 ORDER BY date_joined;"""
 
-    ZERO_TABLE_STATEMENT = \
-        """
+    ZERO_TABLE_STATEMENT = """
 SELECT (1, 2, 3);"""
 
     table_names = []
@@ -922,8 +919,7 @@ def test_get_query_columns(sql_parser: sqlparser.SqlParser):
 
     # Nonsense query that just has different kinds of table names in different
     # contexts.
-    COMPLEX_COLUMNS_QUERY = \
-        f"""
+    COMPLEX_COLUMNS_QUERY = f"""
 SELECT c.customer_id, c.fname, c.sname
 FROM e31_test_table_customers AS c
 INNER JOIN e31_test_table_orders AS o
@@ -941,8 +937,7 @@ ORDER BY c.customer_id;"""
 
 @pytest.mark.usefixtures("sql_parser")
 def test_get_column_name_from_column_expression(sql_parser: sqlparser.SqlParser):
-    BORING_STATEMENT = \
-        """
+    BORING_STATEMENT = """
 SELECT *
 FROM customers AS c
 WHERE c.customer_id = 2
@@ -952,15 +947,13 @@ ORDER BY c.nickname;"""
     parsed_sql = parser.parse_one(BORING_STATEMENT)
     column_expression = parsed_sql.find(exp.Column)
     assert isinstance(column_expression, exp.Column)
-    column_name = parser.get_column_name_from_column_expression(
-        column_expression)
+    column_name = parser.get_column_name_from_column_expression(column_expression)
     assert column_name == "customer_id"
 
 
 @pytest.mark.usefixtures("sql_parser")
 def test_find_where_predicates(sql_parser: sqlparser.SqlParser):
-    NESTED_WHERE = \
-        """
+    NESTED_WHERE = """
 SELECT *
 FROM orders
 WHERE (order_total_eur = order_total_eur) AND
@@ -982,12 +975,10 @@ WHERE (order_total_eur = order_total_eur) AND
 
 @pytest.mark.usefixtures("sql_parser_datatypedb")
 def test_datatypes(sql_parser_datatypedb: sqlparser.SqlParser):
-    SIMPLE_STATEMENT = \
-f"""
+    SIMPLE_STATEMENT = f"""
 SELECT (1,2,3);"""
 
-    SELECT_STATEMENT = \
-f"""
+    SELECT_STATEMENT = f"""
 SELECT *
 FROM {TYPE_TEST_TABLE_NAME};"""
 
