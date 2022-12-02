@@ -4,6 +4,7 @@ Uses pexpect in combination with pyte for interfacing and screen-scraping
 """
 
 from typing import Callable, List
+from copy import deepcopy
 from functools import reduce
 import pexpect
 from pyte import Stream, Screen
@@ -23,7 +24,9 @@ class PsqlWrapper:
     supported_psql_versions: list[str] = ["14.5"]
 
     def __init__(self, psql_args: bytes,
-                 hook_f: Callable[[str], str], parser: PsqlParser):
+                 hook_semantic_f: Callable[[str], str],
+                 hook_syntax_f: Callable[[str], str],
+                 parser: PsqlParser):
         """Build wrapper for selected database.
 
         :param db_name_parameter: is name of database we are connecting to.
@@ -32,7 +35,8 @@ class PsqlWrapper:
         :param parser: A parser that implements the required parsing functions.
         """
         self.psql_args: bytes = psql_args
-        self.analyze: Callable[[str], str] = hook_f
+        self.semantic_analyze: Callable[[str], str] = hook_semantic_f
+        self.syntax_analyze: Callable[[str], str] = hook_syntax_f
         self.parser: PsqlParser = parser
 
         # shutil.get_terminal_size()
@@ -49,7 +53,6 @@ class PsqlWrapper:
     def start(self) -> None:
         """Start psql process and then start feeding hook function with \
         intercepted output."""
-
         version_msg = self.check_psql_version()
         if version_msg != "":
             print(version_msg)
@@ -68,13 +71,17 @@ class PsqlWrapper:
         version_info.expect(pexpect.EOF)
         version_info_str: str = bytes.decode(version_info.before)
         version: str = self.parser.parse_psql_version(version_info_str)
+
+        # command-line arguments prevented getting version
+        if version == "":
+            return ""
+
         version_ok: bool = version in self.supported_psql_versions
         if version_ok:
             return ""
         else:
             return "Pg4n has only been tested on psql versions " + \
                 str(self.supported_psql_versions) + "."
-        
 
     def ifilter(self, input: bytes) -> bytes:
         """User input filter function for pexpect.interact: not used.
@@ -119,28 +126,46 @@ class PsqlWrapper:
         # input does not trigger parsing (Return is always at least 2 length)
         if len(latest_output) <= 1:
             return latest_output
-
+        
         # User hit Return: parse for potential SQL query, analyze, and
         # possibly provide a message to be included in next new prompt.
         if self._user_hit_return(latest_output):
+            # get terminal screen contents
             screen: str = '\n'.join(
                 line.rstrip() for line in self.pyte_screen.display)
+
             parsed_sql_query: str = \
                 self.parser.parse_last_found_stmt(screen)
             if parsed_sql_query != "":
                 # feed query to hook function and save resulting message
-                self.pg4n_message = self.analyze(parsed_sql_query)
+                self.pg4n_message = self.semantic_analyze(parsed_sql_query)
 
-        # If we have a semantic error message waiting and there is a fresh
-        # prompt:
-        # optimization: do not spend time parsing if there is no message:
-        # AND-clause will stop executing after first False.
-        if self.pg4n_message != "" \
-           and self.parser.parse_new_prompt(
-               bytes.decode(latest_output)) != []:  # there is new prompt
-            new_output: bytes = self._replace_prompt(latest_output)
-            self.pg4n_message = ""
-            return new_output
+        # If there is a fresh prompt:
+        if self.parser.parse_new_prompt(
+               bytes.decode(latest_output)) != []:
+            # If we have a semantic error message waiting 
+            if self.pg4n_message != "":
+                new_output: bytes = self._replace_prompt(latest_output)
+                self.pg4n_message = ""
+                return new_output
+
+            # Since latest_output contains error details, we will have to
+            # see how the screen would look like without any injections
+            potential_future_screen = \
+                deepcopy(self.pyte_screen)
+            potential_future_screen_output_sink = \
+                Stream(potential_future_screen)
+            potential_future_screen_output_sink.feed(bytes.decode(latest_output))
+
+            potential_future_contents: str = '\n'.join(
+                line.rstrip() for line in potential_future_screen.display)
+            syntax_error = \
+                self.parser.parse_syntax_error(potential_future_contents)
+            if syntax_error != "":
+                self.pg4n_message = self.syntax_analyze(syntax_error)
+                new_output: bytes = self._replace_prompt(latest_output)
+                self.pg4n_message = ""
+                return new_output
 
         return latest_output
 

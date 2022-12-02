@@ -184,7 +184,7 @@ class PsqlParser:
                 f.close()
 
         # If parsing was successful, pick interesting parts.
-        if stmt_res:
+        if stmt_res is not None:
             stmt_res_list = stmt_res.as_list()
             length: int = len(stmt_res_list)
 
@@ -254,3 +254,34 @@ class PsqlParser:
             result = stmt_res.as_list()[1]
 
         return result
+
+    def parse_syntax_error(self, psql: str) -> str:
+        psql_rev = psql[::-1]
+
+        tok_marker_caret: ParserElement = \
+            Literal("^")
+        tok_rev_error: ParserElement = \
+            Literal(":RORRE")
+        match_error_statement: ParserElement = \
+            ... + tok_marker_caret + ... + tok_rev_error
+
+        results: str = ""
+        stmt_res: ParseResults = None
+
+        try: 
+            stmt_res = match_error_statement.parse_string(psql_rev)
+        except ParseException as e:
+            if self.debug:
+                f = open("psqlparser.log", "a")
+                f.write(str(e.explain()) + "\n")
+                f.close()
+
+        if stmt_res is not None:
+            stmt_res_list = stmt_res.as_list()
+            results = [stmt_res_list[3],
+                        stmt_res_list[2],
+                        stmt_res_list[1]]
+        reversed_flattened_res: str = \
+            reduce(lambda x, y: x + y[::-1], results, "")
+
+        return reversed_flattened_res
