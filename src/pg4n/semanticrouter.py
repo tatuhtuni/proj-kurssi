@@ -13,6 +13,7 @@ from .strange_having_checker import StrangeHavingChecker
 from .subquery_order_by_checker import SubqueryOrderByChecker
 from .subquery_select_checker import SubquerySelectChecker
 from .sum_distinct_checker import SumDistinctChecker
+from .inconsistent_expression_checker import InconsistentExpressionChecker
 
 
 class SemanticRouter:
@@ -100,6 +101,13 @@ class SemanticRouter:
             # Wildcards without LIKE
             analysis_result = \
                 EqWildcardChecker(sanitized_sql, qep_analysis).check()
+
+            if analysis_result is not None:
+                return analysis_result
+
+            # Inconsistent expression
+            analysis_result = \
+                InconsistentExpressionChecker(sanitized_sql, qep_analysis).check()
 
             if analysis_result is not None:
                 return analysis_result
