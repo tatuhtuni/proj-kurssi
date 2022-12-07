@@ -16,8 +16,6 @@ from .psqlparser import PsqlParser
 class PsqlWrapper:
     """Handles terminal interfacing with psql, using the parameter parser \
     to pick up relevant SQL statements for the hook function.
-
-    Only one (static) class instance is intended for use in program.
     """
 
     debug: bool = False
@@ -51,9 +49,12 @@ class PsqlWrapper:
         self.pg4n_message: str = ""
 
     def start(self) -> None:
-        """Start psql process and then start feeding hook function with \
-        intercepted output."""
-        version_msg = self.check_psql_version()
+        """Start psql process and feed hook functions with \
+        intercepted queries and syntax errors.
+
+        Control is only returned after psql process exits.
+        """
+        version_msg = self._check_psql_version()
         if version_msg != "":
             print(version_msg)
 
@@ -61,10 +62,10 @@ class PsqlWrapper:
                           encoding="utf-8",
                           dimensions=(self.rows, self.cols))
 
-        c.interact(input_filter=self.ifilter,
-                   output_filter=self.ofilter)
+        c.interact(input_filter=lambda x: x,
+                   output_filter=self._intercept)
 
-    def check_psql_version(self) -> str:
+    def _check_psql_version(self) -> str:
         version_info = \
             pexpect.spawn("psql " + bytes.decode(self.psql_args) +
                           " --version")
@@ -83,22 +84,14 @@ class PsqlWrapper:
             return "Pg4n has only been tested on psql versions " + \
                 str(self.supported_psql_versions) + "."
 
-    def ifilter(self, input: bytes) -> bytes:
-        """User input filter function for pexpect.interact: not used.
-
-        :param input: user input characters.
-        :returns: unchanged input.
-        """
-        return input
-
-    def ofilter(self, output: bytes) -> bytes:
+    def _intercept(self, output: bytes) -> bytes:
         """Forward output to `check_and_act_on_repl_output()` and feed \
         output to pyte screen for future screen-scraping.
 
         :param output: output seen on terminal screen.
         :returns: output with injected semantic error messages.
         """
-        new_output: bytes = self.check_and_act_on_repl_output(output)
+        new_output: bytes = self._check_and_act_on_repl_output(output)
 
         self.pyte_screen_output_sink.feed(bytes.decode(new_output))
 
@@ -113,7 +106,7 @@ class PsqlWrapper:
 
         return new_output
 
-    def check_and_act_on_repl_output(self, latest_output: bytes) -> bytes:
+    def _check_and_act_on_repl_output(self, latest_output: bytes) -> bytes:
         """Check if user has hit Return so we can start analyzing, \
         or if a fresh prompt has come in and we can show them a helpful \
         message.
@@ -122,11 +115,13 @@ class PsqlWrapper:
         analysis. It is also what the helpful message will be injected to.
         :returns: output with injected semantic error messages.
         """
-        # for optimization reasons, check output only if len() > 1, so keyboard
-        # input does not trigger parsing (Return is always at least 2 length)
+        new_output: bytes = ""
+        # for optimization reasons, check output only if len() > 1, so most
+        # keyboard input does not trigger parsing
+        # (Return is always at least 2 length)
         if len(latest_output) <= 1:
             return latest_output
-        
+
         # User hit Return: parse for potential SQL query, analyze, and
         # possibly provide a message to be included in next new prompt.
         if self._user_hit_return(latest_output):
@@ -135,27 +130,29 @@ class PsqlWrapper:
                 line.rstrip() for line in self.pyte_screen.display)
 
             parsed_sql_query: str = \
-                self.parser.parse_last_found_stmt(screen)
+                self.parser.parse_last_stmt(screen)
             if parsed_sql_query != "":
-                # feed query to hook function and save resulting message
+                # feed query to semantic analysis hook function
+                # and save resulting message
                 self.pg4n_message = self.semantic_analyze(parsed_sql_query)
 
         # If there is a fresh prompt:
-        if self.parser.parse_new_prompt(
-               bytes.decode(latest_output)) != []:
-            # If we have a semantic error message waiting 
+        if self.parser.output_has_new_prompt(bytes.decode(latest_output)):
+            # If we have a semantic error message waiting
             if self.pg4n_message != "":
-                new_output: bytes = self._replace_prompt(latest_output)
+                new_output = self._replace_prompt(latest_output)
                 self.pg4n_message = ""
                 return new_output
 
             # Since latest_output contains error details, we will have to
-            # see how the screen would look like without any injections
+            # see how the screen would look like, but still allow injecting
+            # an insightful syntax error message from the syntax analysis.
             potential_future_screen = \
                 deepcopy(self.pyte_screen)
             potential_future_screen_output_sink = \
                 Stream(potential_future_screen)
-            potential_future_screen_output_sink.feed(bytes.decode(latest_output))
+            potential_future_screen_output_sink.feed(
+                bytes.decode(latest_output))
 
             potential_future_contents: str = '\n'.join(
                 line.rstrip() for line in potential_future_screen.display)
@@ -163,7 +160,7 @@ class PsqlWrapper:
                 self.parser.parse_syntax_error(potential_future_contents)
             if syntax_error != "":
                 self.pg4n_message = self.syntax_analyze(syntax_error)
-                new_output: bytes = self._replace_prompt(latest_output)
+                new_output = self._replace_prompt(latest_output)
                 self.pg4n_message = ""
                 return new_output
 
@@ -172,13 +169,16 @@ class PsqlWrapper:
     def _replace_prompt(self, prompt: bytes) -> bytes:
         """Inject saved semantic error message into given prompt.
 
-        :param prompt: is where the message is injected. A fresh prompt is \
-        expected.
-        :returns: a prompt with injected message.
+        :param prompt: is output where message is injected to. A fresh prompt \
+        is expected, or otherwise no injection is made.
+        :returns: a prompt with injected message, or unchanged if \
+        detecting new prompt fails.
         """
         split_prompt: List[str] = \
             self.parser.parse_new_prompt_and_rest(
                 bytes.decode(prompt, "utf-8"))
+        if split_prompt == []:
+            return prompt  # prompt is malformed and is returned as-is.
         print_msg = self.pg4n_message.replace("\n", "\r\n")
         return bytes(split_prompt[0] + "\r\n" +
                      print_msg + "\r\n\r\n" +
@@ -189,7 +189,7 @@ class PsqlWrapper:
         """Check if user hit return.
 
         :param output: is raw console output to be checked for return press.
-        :returns: if user has indeed hit return.
+        :returns: if user has hit return.
         """
         # trivial case:
         # we assume only situation with \r\n at start of
@@ -199,7 +199,7 @@ class PsqlWrapper:
 
         # complicated case: user has ctrl-R'd, copypasted command or something.
         # and the \r\n is somewhere in midst of output..
-        if self.parser.parse_magical_return(
-                bytes.decode(output, "utf-8")) != []:
+        if self.parser.output_has_magical_return(
+                bytes.decode(output, "utf-8")):
             return True
         return False

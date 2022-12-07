@@ -44,64 +44,82 @@ class SemanticRouter:
         control codes. \n is newline (carriage return \r will be added by \
         wrapper).
         """
-        with psycopg.connect("host=" + self.pg_host +
-                             " port=" + self.pg_port +
-                             " dbname=" + self.pg_name +
-                             " user=" + self.pg_user +
-                             " password=" + self.pg_pass) as conn:
-            sql_parser: SqlParser = SqlParser(conn)
-            sanitized_sql: exp.Expression = sql_parser.parse_one(sql_query)
-            qep_analysis: QEPAnalysis = QEPParser(conn=conn).parse(sql_query)
-            analysis_result: Optional[str] = None
+        try:
+            with psycopg.connect("host=" + self.pg_host +
+                                 " port=" + self.pg_port +
+                                 " dbname=" + self.pg_name +
+                                 " user=" + self.pg_user +
+                                 " password=" + self.pg_pass) as conn:
+                sql_parser: SqlParser = \
+                    SqlParser(conn)
+                sanitized_sql: exp.Expression = \
+                    sql_parser.parse_one(sql_query)
+                qep_analysis: QEPAnalysis = \
+                    QEPParser(conn=conn).parse(sql_query)
+                analysis_result: Optional[str] = \
+                    None
 
-            # Comparing different domains
-            columns: list[Column] = sql_parser.get_query_columns(sanitized_sql)
-            analysis_result = CmpDomainChecker(sanitized_sql, columns).check()
+                # Comparing different domains
+                columns: list[Column] = \
+                    sql_parser.get_query_columns(sanitized_sql)
+                analysis_result = \
+                    CmpDomainChecker(sanitized_sql,
+                                     columns).check()
 
-            if analysis_result is not None:
-                return analysis_result
+                if analysis_result is not None:
+                    return analysis_result
 
-            # ORDER BY in subquery
-            analysis_result = \
-                SubqueryOrderByChecker(sanitized_sql, qep_analysis).check()
+                # ORDER BY in subquery
+                analysis_result = \
+                    SubqueryOrderByChecker(sanitized_sql,
+                                           qep_analysis).check()
 
-            if analysis_result is not None:
-                return analysis_result
+                if analysis_result is not None:
+                    return analysis_result
 
-            # SELECT in subquery
-            analysis_result = \
-                SubquerySelectChecker(sanitized_sql, sql_parser).check()
+                # SELECT in subquery
+                analysis_result = \
+                    SubquerySelectChecker(sanitized_sql,
+                                          sql_parser).check()
 
-            if analysis_result is not None:
-                return analysis_result
+                if analysis_result is not None:
+                    return analysis_result
 
-            # Implied expression
-            analysis_result = \
-                ImpliedExpressionChecker(sanitized_sql, sql_query,
-                                         conn).check()
+                # Implied expression
+                analysis_result = \
+                    ImpliedExpressionChecker(sanitized_sql,
+                                             sql_query,
+                                             conn).check()
 
-            if analysis_result is not None:
-                return analysis_result
+                if analysis_result is not None:
+                    return analysis_result
 
-            # Strange HAVING clause without GROUP BY
-            analysis_result = \
-                StrangeHavingChecker(sanitized_sql, qep_analysis).check()
+                # Strange HAVING clause without GROUP BY
+                analysis_result = \
+                    StrangeHavingChecker(sanitized_sql,
+                                         qep_analysis).check()
 
-            if analysis_result is not None:
-                return analysis_result
+                if analysis_result is not None:
+                    return analysis_result
 
-            # SUM/AVG(DISTINCT)
-            analysis_result = \
-                SumDistinctChecker(sanitized_sql, qep_analysis).check()
+                # SUM/AVG(DISTINCT)
+                analysis_result = \
+                    SumDistinctChecker(sanitized_sql,
+                                       qep_analysis).check()
 
-            if analysis_result is not None:
-                return analysis_result
+                if analysis_result is not None:
+                    return analysis_result
 
-            # Wildcards without LIKE
-            analysis_result = \
-                EqWildcardChecker(sanitized_sql, qep_analysis).check()
+                # Wildcards without LIKE
+                analysis_result = \
+                    EqWildcardChecker(sanitized_sql,
+                                      qep_analysis).check()
 
-            if analysis_result is not None:
-                return analysis_result
+                if analysis_result is not None:
+                    return analysis_result
 
-        return ""  # No semantic errors found
+            return ""  # No semantic errors found
+
+        # SQL parser, QEP parser, or an analysis module exploded:
+        except Exception:  # Matches only program errors (see flake8 rule E722)
+            return ""
