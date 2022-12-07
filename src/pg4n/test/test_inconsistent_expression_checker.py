@@ -3,13 +3,13 @@ import pytest
 from psycopg import Connection
 from pytest_postgresql import factories
 
+from ..inconsistent_expression_checker import InconsistentExpressionChecker
 from ..qepparser import QEPParser
 from ..sqlparser import SqlParser
-from ..inconsistent_expression_checker import InconsistentExpressionChecker
-
 
 CUSTOMERS_TABLE_NAME = "inconsistent_expression_test_table_customers"
 ORDERS_TABLE_NAME = "inconsistent_expression_test_table_orders"
+
 
 def load_database(**kwargs):
     # pylint: disable=line-too-long
@@ -539,7 +539,8 @@ def load_database(**kwargs):
         insert into {ORDERS_TABLE_NAME} (order_id, order_total_eur, customer_id) values (247, 123.55, 179);
         insert into {ORDERS_TABLE_NAME} (order_id, order_total_eur, customer_id) values (248, 321.97, 195);
         insert into {ORDERS_TABLE_NAME} (order_id, order_total_eur, customer_id) values (249, 491.05, 63);
-        insert into {ORDERS_TABLE_NAME} (order_id, order_total_eur, customer_id) values (250, 367.56, 214);""")
+        insert into {ORDERS_TABLE_NAME} (order_id, order_total_eur, customer_id) values (250, 367.56, 214);"""
+        )
         conn.commit()
 
 
@@ -553,17 +554,17 @@ postgresql = factories.postgresql("factory")
 def sql_parser(postgresql: Connection):
     return SqlParser(db_connection=postgresql)
 
+
 @pytest.fixture
 def qep_parser(postgresql: Connection):
     return QEPParser(conn=postgresql)
 
+
 def test_check(sql_parser: SqlParser, qep_parser: QEPParser):
-    SQL_SIMPLE = \
-"""
+    SQL_SIMPLE = """
 SELECT (1, 2, 3);"""
 
-    SQL_INCONSISTENT_CMP = \
-f"""
+    SQL_INCONSISTENT_CMP = f"""
 SELECT order_id
 FROM {ORDERS_TABLE_NAME}
 WHERE order_total_eur = 10 AND order_total_eur = 50;"""
