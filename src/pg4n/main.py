@@ -1,4 +1,7 @@
 def main() -> None:
+    """Initiate session by getting psql connection parameters via psql \
+    child process, initializing semantic analysis and wrapper modules, \
+    and then starting the session."""
     import pexpect
     import sys
     from functools import reduce
@@ -19,7 +22,7 @@ def main() -> None:
                                # semantic analysis:
                                sem_router.run_analysis,
                                # no syntax error analysis:
-                               lambda syntax_error: "Lol",
+                               lambda syntax_error_analysis: "",
                                PsqlParser())
             psql.start()
         else:
