@@ -1,16 +1,18 @@
+from functools import reduce
+import sys
+
+import pexpect
+
+from .psqlconninfo import PsqlConnInfo
+from .semanticrouter import SemanticRouter
+from .psqlparser import PsqlParser
+from .psqlwrapper import PsqlWrapper
+
+
 def main() -> None:
     """Initiate session by getting psql connection parameters via psql \
     child process, initializing semantic analysis and wrapper modules, \
     and then starting the session."""
-    import pexpect
-    import sys
-    from functools import reduce
-
-    from .psqlconninfo import PsqlConnInfo
-    from .semanticrouter import SemanticRouter
-    from .psqlparser import PsqlParser
-    from .psqlwrapper import PsqlWrapper
-
     if len(sys.argv) > 1:
         conn_info = PsqlConnInfo(
             reduce(lambda x, y: x + y, sys.argv[1:], "")  # concat arguments
@@ -32,7 +34,10 @@ def main() -> None:
             # e.g. "pg4n --help" is being run.
             # for simplicity, just use pexpect here
             psql_output = pexpect.spawn(
-                "psql " + reduce(lambda x, y: x + y, sys.argv[1:], "")
+                "psql "
+                + reduce(
+                    lambda x, y: x + y, sys.argv[1:], ""
+                )
             )
             psql_output.expect(pexpect.EOF)
             print(bytes.decode(psql_output.before))

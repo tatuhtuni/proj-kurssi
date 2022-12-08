@@ -6,11 +6,12 @@ Uses pexpect in combination with pyte for interfacing and screen-scraping
 respectively.
 """
 
-from typing import Callable, List
 from copy import deepcopy
+from shutil import get_terminal_size
+from typing import Callable, List
+
 import pexpect
 from pyte import Stream, Screen
-from shutil import get_terminal_size
 
 from .psqlparser import PsqlParser
 

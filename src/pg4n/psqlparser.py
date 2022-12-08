@@ -2,7 +2,10 @@
 # Licensed under MIT.
 """Parse psql output."""
 
+from functools import reduce
+from string import printable
 from typing import Optional
+
 from pyparsing import (
     CaselessLiteral,
     Char,
@@ -19,8 +22,6 @@ from pyparsing import (
     identbodychars,
     nums
 )
-from functools import reduce
-from string import printable
 
 # Turn on memoization optimization
 ParserElement.enablePackrat(None)

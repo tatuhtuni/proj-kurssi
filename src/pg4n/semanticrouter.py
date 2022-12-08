@@ -1,9 +1,9 @@
 # Written by Tatu Heikkilä, tatu.heikkila@tuni.fi
 # Licensed under MIT.
 """Handle semantic analysis modules."""
+from typing import Optional
 import psycopg
 from sqlglot import exp
-from typing import Optional
 
 from .sqlparser import SqlParser, Column
 from .qepparser import QEPAnalysis, QEPParser
