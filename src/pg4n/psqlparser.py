@@ -23,11 +23,7 @@ class PsqlParser:
     # Turn on verbose output to psqlparser.log file in working directory
     debug: bool = False
 
-    # Parsing functions common to more than 1 parsing function:
-
-    # rev is shorthand for reversed.
-    # Reversing happens for performance reasons,
-    # as interesting things usually are at end of a long string.
+    # Parsing functions common to more than 1 parsing functions are listed here
 
     prompt_chars: str = identbodychars
     stmt_end: str = ";"
@@ -38,7 +34,12 @@ class PsqlParser:
 
     # tok, or token, is parsing element with only single element output,
     # either by only having single element, or using Combine to squash
-    # multiple elements into one.
+    # multiple elements into one. These are often combined to build functions
+    # for matching.
+
+    # 'rev' in variable names is shorthand for reversed.
+    # Reversing happens for performance reasons,
+    # as interesting things usually are at end of a long string.
 
     # %/%R%x%# per postgres bin/psql/settings.h
     # prompt1 per bin/psql/prompt.c:
@@ -61,8 +62,8 @@ class PsqlParser:
     # %x = nothing, *, !, ?
     # %# = #, >
     # This will match against "%R%x%# ", e.g "-> ".
-    # To save time, since this is used only to remove parts of a string,
-    # we just use a memoized list of all possible combinations:
+    # To save time, since linebreak prompts are only removed,
+    # just match against a list of all possible combinations
     multiline_prompt_ends: list[str] = \
         ["-#", "*#", "\'#", "\"#", "$#", "(#",
          "->", "*>", "\'>", "\">", "$>", "(>",

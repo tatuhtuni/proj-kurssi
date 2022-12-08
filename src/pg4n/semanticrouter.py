@@ -1,3 +1,6 @@
+# Written by Tatu Heikkilä, tatu.heikkila@tuni.fi
+# Licensed under MIT.
+"""Handle semantic analysis modules."""
 import psycopg
 from sqlglot import exp
 from typing import Optional
@@ -9,6 +12,7 @@ from .qepparser import QEPAnalysis, QEPParser
 from .cmp_domain_checker import CmpDomainChecker
 from .eq_wildcard_checker import EqWildcardChecker
 from .implied_expression_checker import ImpliedExpressionChecker
+#from .inconsistent_expression_checker import InconsistentExpressionChecker
 from .strange_having_checker import StrangeHavingChecker
 from .subquery_order_by_checker import SubqueryOrderByChecker
 from .subquery_select_checker import SubquerySelectChecker
@@ -41,8 +45,7 @@ class SemanticRouter:
         force router.
         :param sql_query: is a single well-formed query to run analytics on.
         :returns: an insightful message that might include vt100-compatible \
-        control codes. \n is newline (carriage return \r will be added by \
-        wrapper).
+        control codes and newlines (without carriage returns).
         """
         try:
             with psycopg.connect("host=" + self.pg_host +
@@ -77,19 +80,27 @@ class SemanticRouter:
                 if analysis_result is not None:
                     return analysis_result
 
-                # SELECT in subquery
-                analysis_result = \
-                    SubquerySelectChecker(sanitized_sql,
-                                          sql_parser).check()
-
-                if analysis_result is not None:
-                    return analysis_result
-
                 # Implied expression
                 analysis_result = \
                     ImpliedExpressionChecker(sanitized_sql,
                                              sql_query,
                                              conn).check()
+
+                if analysis_result is not None:
+                    return analysis_result
+
+                # Inconsistent expression
+                # analysis_result = \
+                #    InconsistentExpressionChecker(sanitized_sql,
+                #                                  qep_analysis).check()
+
+                #if analysis_result is not None:
+                #    return analysis_result
+
+                # SELECT in subquery
+                analysis_result = \
+                    SubquerySelectChecker(sanitized_sql,
+                                          sql_parser).check()
 
                 if analysis_result is not None:
                     return analysis_result

@@ -1,11 +1,13 @@
+# Written by Tatu Heikkilä, tatu.heikkila@tuni.fi
+# Licensed under MIT.
 """Interface with psql and capture all input and output.
 
 Uses pexpect in combination with pyte for interfacing and screen-scraping
+respectively.
 """
 
 from typing import Callable, List
 from copy import deepcopy
-from functools import reduce
 import pexpect
 from pyte import Stream, Screen
 from shutil import get_terminal_size
@@ -15,10 +17,12 @@ from .psqlparser import PsqlParser
 
 class PsqlWrapper:
     """Handles terminal interfacing with psql, using the parameter parser \
-    to pick up relevant SQL statements for the hook function.
-    """
+    to pick up relevant SQL statements and syntax errors for hook functions."""
 
+    # debug creates pyte.screen (current screenscraping context) and
+    # psqlwrapper.log (capturing terminal stream) in working directory
     debug: bool = False
+
     supported_psql_versions: list[str] = ["14.5"]
 
     def __init__(self, psql_args: bytes,
@@ -27,9 +31,14 @@ class PsqlWrapper:
                  parser: PsqlParser):
         """Build wrapper for selected database.
 
-        :param db_name_parameter: is name of database we are connecting to.
-        :param hook_f: is a callback to which scraped SQL queries are passed \
-        to and from which semantic error messages are received in return.
+        :param psql_args: are the command-line arguments pg4n has been called \
+        with.
+        :param hook_semantic_f: is a callback to which scraped SQL queries are\
+        passed to, and from which corresponding semantic warning messages are \
+        received in return.
+        :param hook_syntax_f: is a callback to which scraped syntax error \
+        messages are passed to, and from which corresponding warning messages \
+        are received.
         :param parser: A parser that implements the required parsing functions.
         """
         self.psql_args: bytes = psql_args
@@ -44,8 +53,8 @@ class PsqlWrapper:
         self.pyte_screen: Screen = Screen(self.cols, self.rows)
         self.pyte_screen_output_sink: Stream = Stream(self.pyte_screen)
 
-        # Analysis is always done when user presses Return
-        # and resulting message is saved until when new prompt comes in
+        # Semantic analysis is always done when user presses Return
+        # and resulting message is saved here until when new prompt comes in
         self.pg4n_message: str = ""
 
     def start(self) -> None:
@@ -66,6 +75,12 @@ class PsqlWrapper:
                    output_filter=self._intercept)
 
     def _check_psql_version(self) -> str:
+        """Check PostgreSQL version via psql child process and match \
+        against versions pg4n is tested with.
+
+        :returns: an empty string if current version has been tested, \
+        otherwise a warning message.
+        """
         version_info = \
             pexpect.spawn("psql " + bytes.decode(self.psql_args) +
                           " --version")
@@ -73,7 +88,7 @@ class PsqlWrapper:
         version_info_str: str = bytes.decode(version_info.before)
         version: str = self.parser.parse_psql_version(version_info_str)
 
-        # command-line arguments prevented getting version
+        # command-line arguments prevent interactive sessions (e.g pg4n --help)
         if version == "":
             return ""
 
@@ -85,8 +100,8 @@ class PsqlWrapper:
                 str(self.supported_psql_versions) + "."
 
     def _intercept(self, output: bytes) -> bytes:
-        """Forward output to `check_and_act_on_repl_output()` and feed \
-        output to pyte screen for future screen-scraping.
+        """Forward output to `_check_and_act_on_repl_output` and feed \
+        output to pyte screen for screenscraping.
 
         :param output: output seen on terminal screen.
         :returns: output with injected semantic error messages.
@@ -123,7 +138,7 @@ class PsqlWrapper:
             return latest_output
 
         # User hit Return: parse for potential SQL query, analyze, and
-        # possibly provide a message to be included in next new prompt.
+        # save a potential warning to be included in before next fresh prompt.
         if self._user_hit_return(latest_output):
             # get terminal screen contents
             screen: str = '\n'.join(
