@@ -3,10 +3,22 @@
 """Parse psql output."""
 
 from typing import Optional
-from pyparsing import \
-    CaselessLiteral, Char, Combine, Literal, Opt, ParseException, \
-    ParseResults, ParserElement, StringEnd, White, Word, ZeroOrMore, \
-    identbodychars, nums
+from pyparsing import (
+    CaselessLiteral,
+    Char,
+    Combine,
+    Literal,
+    Opt,
+    ParseException,
+    ParseResults,
+    ParserElement,
+    StringEnd,
+    White,
+    Word,
+    ZeroOrMore,
+    identbodychars,
+    nums
+)
 from functools import reduce
 from string import printable
 
@@ -14,7 +26,7 @@ from string import printable
 ParserElement.enablePackrat(None)
 
 # default whitespace rules complicate things needlessly, remove them:
-ParserElement.setDefaultWhitespaceChars('')
+ParserElement.setDefaultWhitespaceChars("")
 
 
 class PsqlParser:
@@ -29,8 +41,7 @@ class PsqlParser:
     stmt_end: str = ";"
     # Naively, SQL statement body can contain all printable characters
     # (incl. whitespace), apart from ';'
-    stmt_chars: str = \
-        printable.translate(str.maketrans("", "", stmt_end))
+    stmt_chars: str = printable.translate(str.maketrans("", "", stmt_end))
 
     # tok, or token, is parsing element with only single element output,
     # either by only having single element, or using Combine to squash
@@ -48,12 +59,12 @@ class PsqlParser:
     # %x = nothing, *, !, ?
     # %# = #, >
     # This will match against "%R%x%# ", e.g "=> ".
-    tok_rev_prompt_end: ParserElement = \
-        Combine(
-            Opt(White()) +
-            (Literal('#') | Literal('>')) +
-            Opt(Literal('*') | Literal('!') | Literal('?'), "") +
-            (Literal('=') | Literal('^')))
+    tok_rev_prompt_end: ParserElement = Combine(
+            Opt(White())
+            + (Literal('#') | Literal('>'))
+            + Opt(Literal('*') | Literal('!') | Literal('?'), "")
+            + (Literal('=') | Literal('^'))
+    )
 
     # %/%R%x%# per postgres bin/psql/settings.h
     # prompt2 per bin/psql/prompt.c:
@@ -97,10 +108,11 @@ class PsqlParser:
         # Based on exploratory testing,
         # magic strings (related at least to ctrl-R use) are
         # "\r\n\x1b[?2004l\r", "\r\n\r\r\n" and "\x08\r\n".
-        match_rev_magical_returns: ParserElement = \
-            Literal("\r\n\x1b[?2004l\r"[::-1]) \
-            | Literal("\r\n\r\r\n"[::-1]) \
+        match_rev_magical_returns: ParserElement = (
+            Literal("\r\n\x1b[?2004l\r"[::-1])
+            | Literal("\r\n\r\r\n"[::-1])
             | Literal("\x08\r\n"[::-1])
+        )
 
         has_magical_return: bool = False
         magical_return_res: Optional[ParseResults] = None
@@ -129,8 +141,7 @@ class PsqlParser:
         has_new_prompt: bool = False
         prompt_res: Optional[ParseResults] = None
 
-        match_rev_prompt_end: ParserElement = \
-            self.tok_rev_prompt_end
+        match_rev_prompt_end: ParserElement = self.tok_rev_prompt_end
 
         try:
             prompt_res = match_rev_prompt_end.parse_string(psql_rev)
@@ -159,13 +170,17 @@ class PsqlParser:
         results: list[str] = []
         prompt_res: Optional[ParseResults] = None
 
-        match_rev_prompt_and_then_rest: ParserElement = \
-            self.tok_rev_prompt_end + \
-            Word(self.prompt_chars) + \
-            (StringEnd() |         # output may stop at end of db name,
-             (Literal("?[\x1b") +  # or continue \x1b[?.. (in this case control
-              ... +                # parameter 2004h is already parsed as name)
-              StringEnd()))
+        match_rev_prompt_and_then_rest: ParserElement = (
+            self.tok_rev_prompt_end 
+            + Word(self.prompt_chars)
+            + (StringEnd()         # output may stop at end of db name,
+               | (  # or continue \x1b[?.. 
+                   Literal("?[\x1b")  # in this case control code parameter
+                   + ...              # has already been parsed as prompt_chars
+                   + StringEnd()
+               )
+            )
+        )
 
         try:
             prompt_res = match_rev_prompt_and_then_rest.parse_string(psql_rev)
@@ -179,16 +194,15 @@ class PsqlParser:
         if prompt_res:
             res_list = prompt_res.as_list()
             if len(res_list) == 2:  # parsing stops right after database name
-                results = ['',
-                           res_list[1][::-1] +
-                           res_list[0][::-1]
-                           ]
+                results = [
+                    '',
+                    res_list[1][::-1] + res_list[0][::-1]
+                ]
             elif len(res_list) == 4:  # results include \x1b[?2004h..
-                results = [res_list[3][::-1],
-                           res_list[2][::-1] +
-                           res_list[1][::-1] +
-                           res_list[0][::-1]
-                           ]
+                results = [
+                    res_list[3][::-1],
+                    res_list[2][::-1] + res_list[1][::-1] + res_list[0][::-1]
+                ]
 
         return results
 
@@ -205,16 +219,20 @@ class PsqlParser:
         # Match statement that might have \r\n or whitespace at the end.
         # Parse prompt text at the end, so multiline queries can be cleaned
         # properly.
-        tok_stmt_end: ParserElement = \
-            Char(';')
+        tok_stmt_end: ParserElement = Char(';')
 
-        match_rev_any_sql_stmt: ParserElement = \
-            ZeroOrMore(White()) + tok_stmt_end + ... + \
-            self.tok_rev_prompt_end
+        match_rev_any_sql_stmt: ParserElement = (
+            ZeroOrMore(White())
+            + tok_stmt_end
+            + ...
+            + self.tok_rev_prompt_end
+        )
 
-        match_rev_last_stmt: ParserElement = \
-            ZeroOrMore(Char("\n") | Char("\r") | White()) + \
-            match_rev_any_sql_stmt + Word(self.prompt_chars)
+        match_rev_last_stmt: ParserElement = (
+            ZeroOrMore(Char("\n") | Char("\r") | White())
+            + match_rev_any_sql_stmt
+            + Word(self.prompt_chars)
+        )
 
         results: list[str] = []
         stmt_res: Optional[ParseResults] = None
@@ -233,13 +251,16 @@ class PsqlParser:
             stmt_res_list = stmt_res.as_list()
             length: int = len(stmt_res_list)
 
-            results = [stmt_res_list[length - 3],
-                       stmt_res_list[length - 4]]
+            results = [
+                stmt_res_list[length - 3],
+                stmt_res_list[length - 4]
+            ]
             db_name = stmt_res_list[length - 1][::-1]
 
         # reverse back, concatenate, and remove \n's
-        unreversed_flattened_res: str = \
-            reduce(lambda x, y: x + y[::-1], results, "")
+        unreversed_flattened_res: str = reduce(
+            lambda x, y: x + y[::-1], results, ""
+        )
 
         # Replacing \n's has some edge cases where wrapper transparency
         # breaks, because both of these work right in straight psql. See:
@@ -254,8 +275,10 @@ class PsqlParser:
         no_newlines_res = unreversed_flattened_res.replace('\n', ' ')
 
         # Is the statement a SELECT statement?
-        match_select_stmt: ParserElement = \
-            ZeroOrMore(White()) + CaselessLiteral("SELECT")
+        match_select_stmt: ParserElement = (
+            ZeroOrMore(White())
+            + CaselessLiteral("SELECT")
+        )
         is_select: bool = False
         try:
             is_select = \
@@ -283,9 +306,14 @@ class PsqlParser:
         :param psql: psql --version output
         :returns: version string (e.g "14.5")
         """
-        match_version_stmt: ParserElement = \
-            Literal("psql (PostgreSQL) ") + Combine(Word(nums) +
-                                                    '.' + Word(nums))
+        match_version_stmt: ParserElement = (
+            Literal("psql (PostgreSQL) ")
+            + Combine(
+                Word(nums)
+                + '.'
+                + Word(nums)
+            )
+        )
         stmt_res: Optional[ParseResults] = None
         result: str = ""
 
@@ -310,12 +338,14 @@ class PsqlParser:
         """
         psql_rev = psql[::-1]
 
-        tok_marker_caret: ParserElement = \
-            Literal("^")
-        tok_rev_error: ParserElement = \
-            Literal(":RORRE")
-        match_error_statement: ParserElement = \
-            ... + tok_marker_caret + ... + tok_rev_error
+        tok_marker_caret: ParserElement = Literal("^")
+        tok_rev_error: ParserElement = Literal(":RORRE")
+        match_error_statement: ParserElement = (
+            ...
+            + tok_marker_caret
+            + ...
+            + tok_rev_error
+        )
 
         results: list[str] = []
         stmt_res: Optional[ParseResults] = None
