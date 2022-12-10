@@ -6,7 +6,7 @@
 
 src_dir=src/pg4n
 
-readarray -d '' files < <(find "${src_dir}/" -maxdepth 1 -type f -iname '*checker.py' -print0)
+readarray -d '' files < <(find "${src_dir}/" -maxdepth 1 -type f -iname '*checker.py' -print0 | sort -z -t '/' -k3)
 
 comment=
 
@@ -14,5 +14,5 @@ for f in "${files[@]##${src_dir}/}"
 do
     echo "$f" | sed -E 's/(^|_)(\w)/\U\2/g' | \
                 sed -E 's/^(.*)Checker\.py$/\1/' | \
-                sed -E 's/^.*$/\0: bool/'
+                sed -E 's/^.*$/    \0: bool/'
 done
