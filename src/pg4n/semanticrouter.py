@@ -17,6 +17,7 @@ from .strange_having_checker import StrangeHavingChecker
 from .subquery_order_by_checker import SubqueryOrderByChecker
 from .subquery_select_checker import SubquerySelectChecker
 from .sum_distinct_checker import SumDistinctChecker
+from .inconsistent_expression_checker import InconsistentExpressionChecker
 
 
 class SemanticRouter:
@@ -94,13 +95,13 @@ class SemanticRouter:
                     return analysis_result
 
                 # Inconsistent expression
-                # analysis_result = InconsistentExpressionChecker(
-                #     sanitized_sql,
-                #     qep_analysis
-                # ).check()
+                analysis_result = InconsistentExpressionChecker(
+                    sanitized_sql,
+                    qep_analysis
+                ).check()
 
-                # if analysis_result is not None:
-                #    return analysis_result
+                if analysis_result is not None:
+                    return analysis_result
 
                 # SELECT in subquery
                 analysis_result = SubquerySelectChecker(
