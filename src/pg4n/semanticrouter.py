@@ -51,7 +51,13 @@ class SemanticRouter:
                              " user=" + self.pg_user +
                              " password=" + self.pg_pass) as conn:
             sql_parser: SqlParser = SqlParser(conn)
-            sanitized_sql: exp.Expression = sql_parser.parse_one(sql_query)
+            try:
+                sanitized_sql: exp.Expression = sql_parser.parse_one(sql_query)
+            except Exception as e:
+                # Either the sql had syntax error and we let postgresql report
+                # the error or something went terribly wrong in the sqlparsing
+                # library, either we we give up the analysis.
+                return ""
             qep_analysis: QEPAnalysis = QEPParser(conn=conn).parse(sql_query)
             analysis_result: Optional[str] = None
 
