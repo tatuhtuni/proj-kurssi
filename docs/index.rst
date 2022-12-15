@@ -5,6 +5,7 @@ PostgreSQL for novices
    :maxdepth: 2
    :caption: Contents:
    
+   pg4n
    architecture
    maintenance-plan
    api/pg4n
