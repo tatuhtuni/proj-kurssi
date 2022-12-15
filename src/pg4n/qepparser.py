@@ -198,7 +198,6 @@ class QEPParser:
         """
         stmt = "explain (format json, analyze, verbose) " + \
             stmt.strip().rstrip(';') + ";"
-        from psycopg import ProgrammingError
         try:
             with self._conn.cursor() as cur:
                 cur.execute(stmt, *args, **kwargs)
@@ -213,7 +212,7 @@ class QEPParser:
                 if (t := type(res[0][0][0])) != dict:
                     raise ValueError(f"Expected dict in column, got {t}")
                 return QEPAnalysis(res[0][0][0])
-        except ProgrammingError as e:
+        except psycopg.Error as e:
             self._conn.rollback()
 
 
