@@ -6,8 +6,7 @@ PostgreSQL for novices
    :caption: Contents:
    
    interfaces
-   architecture
-   program-architecture
+   maintenance-plan
    api/pg4n
 
 Indices and tables
