@@ -12,7 +12,7 @@
 
 ### Fixing parsing/interception bugs
 
-If improper parsing is suspected, turn `PsqlParser.debug` to `True`, that way all `ParserException.explain`s are saved into `psqlparser.log`. These exceptions are verbose, and will require fair amount of sifting. If improper interception by `PsqlWrapper` is suspected, turn `PsqlWrapper.debug` to `True`, to have current `pyte` display contents copied to `pyte.screen` on every update, and `pexpect` terminal control stream appended into `psqlwrapper.log`.
+If improper parsing is suspected, turn `PsqlParser.debug` to `True`, that way all `ParserException.explain`s are saved into `psqlparser.log`. These exceptions are verbose, and will require fair amount of sifting. If improper interception by `PsqlWrapper` is suspected, turn `PsqlWrapper.debug` to `True`, to have current `pyte` display contents copied to `pyte.screen` on every update, and `pexpect` terminal control stream appended into `psqlwrapper.log`. Any wrapper issues are expected to be quite obtuse to fix, as they likely are `pexpect` or `pyte` library issues.
 
 `pyparsing` documentation is available on [Welcome to PyParsing’s documentation!](https://pyparsing-docs.readthedocs.io/en/latest/)
 
