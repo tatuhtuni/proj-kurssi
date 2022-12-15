@@ -36,6 +36,9 @@ class InconsistentExpressionChecker:
         otherwise None.
         """
 
+        if self.qep_analysis is None:
+            return None
+
         def finder(node: QEPNode) -> bool:
             return node.get("One-Time Filter") is not None
 

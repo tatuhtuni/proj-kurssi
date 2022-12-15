@@ -22,9 +22,10 @@ class SubqueryOrderByChecker:
         # TODO: More sophisticated check that inspects self.parsed_sql and
         #       finds more warnings than postgresql.
 
-        has_orderby = self.parsed_sql.find(exp.Order) is not None
         if self.qep_analysis is None:
             return None
+
+        has_orderby = self.parsed_sql.find(exp.Order) is not None
         has_sort_node = len(
             self.qep_analysis.root.rfindval("Node Type", "Sort")) > 0
         has_inner_orderby = has_orderby and not has_sort_node
