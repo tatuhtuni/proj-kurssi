@@ -1,10 +1,11 @@
 # Written by Tatu Heikkilä, tatu.heikkila@tuni.fi
 # Licensed under MIT.
 """Handle semantic analysis modules."""
-from typing import Optional
+from typing import Optional, Type, Any
 import psycopg
 from sqlglot import exp
 
+from .config_values import ConfigValues
 from .sqlparser import SqlParser, Column
 from .qepparser import QEPAnalysis, QEPParser
 
@@ -12,12 +13,11 @@ from .qepparser import QEPAnalysis, QEPParser
 from .cmp_domain_checker import CmpDomainChecker
 from .eq_wildcard_checker import EqWildcardChecker
 from .implied_expression_checker import ImpliedExpressionChecker
-# from .inconsistent_expression_checker import InconsistentExpressionChecker
+from .inconsistent_expression_checker import InconsistentExpressionChecker
 from .strange_having_checker import StrangeHavingChecker
 from .subquery_order_by_checker import SubqueryOrderByChecker
 from .subquery_select_checker import SubquerySelectChecker
 from .sum_distinct_checker import SumDistinctChecker
-from .inconsistent_expression_checker import InconsistentExpressionChecker
 
 
 class SemanticRouter:
@@ -29,7 +29,8 @@ class SemanticRouter:
         pg_port: str,
         pg_user: str,
         pg_pass: str,
-        pg_name: str
+        pg_name: str,
+        config_values: Optional[ConfigValues]
     ):
         """Initialize Postgres connection with given paramaters."""
         self.pg_host: str = pg_host
@@ -37,6 +38,7 @@ class SemanticRouter:
         self.pg_user: str = pg_user
         self.pg_pass: str = pg_pass
         self.pg_name: str = pg_name
+        self.config_values: Optional[ConfigValues] = config_values
 
     def run_analysis(
         self,
@@ -54,90 +56,110 @@ class SemanticRouter:
         """
         try:
             with psycopg.connect(
-                "host=" + self.pg_host
-                + " port=" + self.pg_port
-                + " dbname=" + self.pg_name
-                + " user=" + self.pg_user
-                + " password=" + self.pg_pass
+                "host=" + self.pg_host +
+                " port=" + self.pg_port +
+                " dbname=" + self.pg_name +
+                " user=" + self.pg_user +
+                " password=" + self.pg_pass
             ) as conn:
-                sql_parser: SqlParser = SqlParser(conn)
-                sanitized_sql: exp.Expression = sql_parser.parse_one(sql_query)
-                qep_analysis: QEPAnalysis = QEPParser(conn=conn).parse(sql_query)
-                analysis_result: Optional[str] = None
+                sql_parser: SqlParser = \
+                    SqlParser(conn)
+                sanitized_sql: exp.Expression = \
+                    sql_parser.parse_one(sql_query)
+                qep_analysis: QEPAnalysis = \
+                    QEPParser(conn=conn).parse(sql_query)
+                analysis_result: Optional[str] = \
+                    None
+
+                columns: list[Column] = \
+                    sql_parser.get_query_columns(sanitized_sql)
+
+                def is_disabled_in_config(checker_class: Type[Any]) -> bool:
+                    if self.config_values is None:
+                        return False
+                    check_name = checker_class.__name__.rstrip("Checker")
+                    return self.config_values.get(check_name) is False
 
                 # Comparing different domains
-                columns: list[Column] = sql_parser.get_query_columns(sanitized_sql)
-                analysis_result = CmpDomainChecker(
-                    sanitized_sql,
-                    columns
-                ).check()
+                if not is_disabled_in_config(CmpDomainChecker):
+                    analysis_result = CmpDomainChecker(
+                        sanitized_sql,
+                        columns
+                    ).check()
 
-                if analysis_result is not None:
-                    return analysis_result
+                    if analysis_result is not None:
+                        return analysis_result
 
                 # ORDER BY in subquery
-                analysis_result = SubqueryOrderByChecker(
-                    sanitized_sql,
-                    qep_analysis
-                ).check()
+                if not is_disabled_in_config(SubqueryOrderByChecker):
+                    analysis_result = SubqueryOrderByChecker(
+                        sanitized_sql,
+                        qep_analysis
+                    ).check()
 
-                if analysis_result is not None:
-                    return analysis_result
-
-                # Implied expression
-                analysis_result = ImpliedExpressionChecker(
-                    sanitized_sql,
-                    sql_query,
-                    conn
-                ).check()
-
-                if analysis_result is not None:
-                    return analysis_result
-
-                # Inconsistent expression
-                analysis_result = InconsistentExpressionChecker(
-                    sanitized_sql,
-                    qep_analysis
-                ).check()
-
-                if analysis_result is not None:
-                    return analysis_result
+                    if analysis_result is not None:
+                        return analysis_result
 
                 # SELECT in subquery
-                analysis_result = SubquerySelectChecker(
-                    sanitized_sql,
-                    sql_parser
-                ).check()
+                if not is_disabled_in_config(SubquerySelectChecker):
+                    analysis_result = SubquerySelectChecker(
+                        sanitized_sql,
+                        sql_parser
+                    ).check()
 
-                if analysis_result is not None:
-                    return analysis_result
+                    if analysis_result is not None:
+                        return analysis_result
+
+                # Implied expression
+                if not is_disabled_in_config(ImpliedExpressionChecker):
+                    analysis_result = ImpliedExpressionChecker(
+                        sanitized_sql,
+                        sql_query,
+                        conn
+                    ).check()
+
+                    if analysis_result is not None:
+                        return analysis_result
 
                 # Strange HAVING clause without GROUP BY
-                analysis_result = StrangeHavingChecker(
-                    sanitized_sql,
-                    qep_analysis
-                ).check()
+                if not is_disabled_in_config(StrangeHavingChecker):
+                    analysis_result = StrangeHavingChecker(
+                        sanitized_sql,
+                        qep_analysis
+                    ).check()
 
                 if analysis_result is not None:
                     return analysis_result
 
                 # SUM/AVG(DISTINCT)
-                analysis_result = SumDistinctChecker(
-                    sanitized_sql,
-                    qep_analysis
-                ).check()
+                if not is_disabled_in_config(SumDistinctChecker):
+                    analysis_result = SumDistinctChecker(
+                        sanitized_sql,
+                        qep_analysis
+                    ).check()
 
-                if analysis_result is not None:
-                    return analysis_result
+                    if analysis_result is not None:
+                        return analysis_result
 
                 # Wildcards without LIKE
-                analysis_result = EqWildcardChecker(
-                    sanitized_sql,
-                    qep_analysis
-                ).check()
+                if not is_disabled_in_config(EqWildcardChecker):
+                    analysis_result = EqWildcardChecker(
+                        sanitized_sql,
+                        qep_analysis
+                    ).check()
 
-                if analysis_result is not None:
-                    return analysis_result
+                    if analysis_result is not None:
+                        return analysis_result
+
+                # Inconsistent expression
+                if not is_disabled_in_config(InconsistentExpressionChecker):
+                    analysis_result = InconsistentExpressionChecker(
+                        sanitized_sql,
+                        qep_analysis
+                    ).check()
+
+                    if analysis_result is not None:
+                        return analysis_result
 
             return ""  # No semantic errors found
 
