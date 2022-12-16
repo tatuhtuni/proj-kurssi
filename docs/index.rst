@@ -5,9 +5,9 @@ PostgreSQL for novices
    :maxdepth: 2
    :caption: Contents:
    
-   interfaces
+   pg4n
    architecture
-   program-architecture
+   maintenance-plan
    api/pg4n
 
 Indices and tables
