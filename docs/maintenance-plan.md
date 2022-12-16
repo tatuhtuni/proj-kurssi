@@ -3,6 +3,9 @@
 ## Backend
 
 ### Implementing semantic analysis modules
+Most of the semantic analysis modules have been implemented by parsing the SQL
+with sqlglot. Only few of the Checker classes use the query evalutation plan
+(QEP).
 
 ### Thoughts on syntax error analysis
 
