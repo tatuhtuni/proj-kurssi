@@ -11,7 +11,7 @@ class SumDistinctChecker:
         self.parsed_sql = parsed_sql
         self.qep_analysis = qep_analysis
 
-    def check(self) -> bool:
+    def check(self) -> Optional[str]:
         """
         Returns warning message if the sql has SUM/AVG(DISTINCT ...),
         otherwise None
