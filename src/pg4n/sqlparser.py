@@ -37,7 +37,7 @@ class SqlParser:
 
         'sql' should be a string of one or more postgresql statements
         (delimited by ';'). The last ';' in 'sql' is optional.
-        Throws sqlglot.ParseError on invalid sql.
+        Raises whichever Exception sqlglot wants to throw on invalid sql.
         """
 
         return sqlglot.parse(sql, read=self.dialect)
@@ -48,7 +48,7 @@ class SqlParser:
         Does not validate that 'sql' contains only 1 statement!
         'sql' should be a postgresql statement.
         The trailing ';' in 'sql' is optional.
-        Throws sqlglot.ParseError on invalid sql.
+        Raises whichever Exception sqlglot wants to throw on invalid sql.
         """
 
         return sqlglot.parse_one(sql, read=self.dialect)
@@ -400,19 +400,17 @@ WHERE
                     )
                     converted_types.append(conv_type)
                 else:
-                    # TODO: proper error handling
                     print(
                         f"unrecognized number type format '{type_name}' for numeric() column type",
                         file=sys.stderr,
                     )
-                    exit(1)
+                    raise Exception
             else:
-                # TODO: proper error handling
                 print(
                     f"unable to convert from internal type '{type_name}' to declared type",
                     file=sys.stderr,
                 )
-                exit(1)
+                raise Exception
 
         return converted_types
 
