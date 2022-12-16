@@ -14,27 +14,36 @@ Each Checker class must use this to format their warning messages.
 
 ### QEPParser
 
+See API docs.
+
 ### SemanticRouter
 
+Runs SQLParser, QEPParser and semantic error analysis modules (as configured) against given SQL query string.
+
 ### SQLParser
+
 Transforms sql string into a syntax tree.
 Also provides some utilities like finding all tables in a sql statement.
 
 ### Analysis modules
 
 #### CmpDomainChecker
+
 Does analysis for suspicous comparisons between different domains.
 e.g., comparing columns off type VARCHAR(20) and VARCHAR(50)
 Returns a warning message if something was found, otherwise None.
 
 #### EqWildcardChecker
+
 Returns warning message if the sql has equals operation to a string with
 wild card character (the '%' character), otherwise None.
 
 #### ImpliedExpressionChecker
+
 Returns warning message if implied expression is detected, otherwise None.
 
 #### InconsistentExpressionChecker
+
 Inconsistent expression is some expression that is never true.
 For example: x = 10 AND x = 20
 
@@ -43,9 +52,11 @@ itself detects the inconsistent expression in its query optimizer and
 exposes that information via its query execution plan.
 
 #### StrangeHavingChecker
+
 Returns warning message if there exists HAVING without a GROUP BY, otherwise None.
 
 #### SubqueryOrderByChecker
+
 Returns warning message if there exists ORDER BY in a subquery,
 otherwise None.
 
@@ -53,13 +64,16 @@ This check gives misses some situations with redundant ORDER BY but
 should never give false positives, only false negatives.
 
 #### SubquerySelectChecker
+
 Returns warning message if there no column SELECTed in a subquery is
 not used in that subquery of its own columns, otherwise returns None.
 
 #### SumDistinctChecker
+
 Returns warning message if the sql has SUM/AVG(DISTINCT ...), otherwise None
 
 ### Program configuration
+
 The configuration files are read in order from: /etc/pg4n.conf then from $XDG\_CONFIG\_HOME/pg4n.conf, or if $XDG\_CONFIG\_HOME is not set, from
 $HOME/.config/pg4n.conf, and lastly from $PWD/pg4n.conf, with each new value
 introduced in latter files overriding the previous value.
@@ -71,13 +85,15 @@ By default all warnings are enabled. Warnings can be disabled by warning type (w
 `CmpDomains false`
 
 #### ConfigParser
+
 Parses a configuration file.
 
 #### ConfigReader
+
 Reads all configuration files and combines their option output into a `ConfigValues` class.
 
-
 #### ConfigValues
+
 Contains option values specied in the configuration files.
 
 ## Frontend

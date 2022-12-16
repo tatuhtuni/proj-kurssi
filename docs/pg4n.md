@@ -1,4 +1,4 @@
-# pg4n
+# General information
 
 ## Installing pg4n
 

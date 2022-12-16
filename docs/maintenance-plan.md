@@ -3,9 +3,8 @@
 ## Backend
 
 ### Implementing semantic analysis modules
-Most of the semantic analysis modules have been implemented by parsing the SQL
-with sqlglot. Only few of the Checker classes use the query evalutation plan
-(QEP).
+
+Most of the semantic analysis modules have been implemented by parsing the SQL with `sqlglot`. Only few of the Checker classes use the query evaluation plan (QEP).
 
 ### Thoughts on syntax error analysis
 
@@ -24,8 +23,6 @@ If improper parsing is suspected, turn `PsqlParser.debug` to `True`, that way al
 To our knowledge, there are no interdependencies with the parser functions, so they should be able to be extended as needed, and new ones added.
 
 ## Known limitations
-
-### Frontend
 
 - `pexpect` does not seem to handle all terminal traffic. `pyte` and user terminal occasionally disagree on contents when user uses ctrl-R to fetch past queries, which prevents screenscraping SQL query properly. `pyte` also disagrees on display contents when exiting a separate query results screen, but this has no impact on `pg4n` performance.
 
