@@ -1,6 +1,9 @@
+# Written by Tatu Heikkilä, tatu.heikkila@tuni.fi
+# Licensed under MIT.
+"""Handle semantic analysis modules."""
+from typing import Optional
 import psycopg
 from sqlglot import exp
-from typing import Optional
 
 from .sqlparser import SqlParser, Column
 from .qepparser import QEPAnalysis, QEPParser
@@ -9,6 +12,7 @@ from .qepparser import QEPAnalysis, QEPParser
 from .cmp_domain_checker import CmpDomainChecker
 from .eq_wildcard_checker import EqWildcardChecker
 from .implied_expression_checker import ImpliedExpressionChecker
+# from .inconsistent_expression_checker import InconsistentExpressionChecker
 from .strange_having_checker import StrangeHavingChecker
 from .subquery_order_by_checker import SubqueryOrderByChecker
 from .subquery_select_checker import SubquerySelectChecker
@@ -19,13 +23,14 @@ from .inconsistent_expression_checker import InconsistentExpressionChecker
 class SemanticRouter:
     """Analyze given SQL queries via a plethora of analysis modules."""
 
-    def __init__(self,
-                 pg_host: str,
-                 pg_port: str,
-                 pg_user: str,
-                 pg_pass: str,
-                 pg_name: str
-                 ):
+    def __init__(
+        self,
+        pg_host: str,
+        pg_port: str,
+        pg_user: str,
+        pg_pass: str,
+        pg_name: str
+    ):
         """Initialize Postgres connection with given paramaters."""
         self.pg_host: str = pg_host
         self.pg_port: str = pg_port
@@ -33,7 +38,10 @@ class SemanticRouter:
         self.pg_pass: str = pg_pass
         self.pg_name: str = pg_name
 
-    def run_analysis(self, sql_query: str) -> str:
+    def run_analysis(
+        self,
+        sql_query: str
+    ) -> str:
         """Run analysis modules on SQL query string and get an insightful \
         message in return.
 
@@ -42,80 +50,97 @@ class SemanticRouter:
         force router.
         :param sql_query: is a single well-formed query to run analytics on.
         :returns: an insightful message that might include vt100-compatible \
-        control codes. \n is newline (carriage return \r will be added by \
-        wrapper).
+        control codes and newlines (without carriage returns).
         """
-        with psycopg.connect("host=" + self.pg_host +
-                             " port=" + self.pg_port +
-                             " dbname=" + self.pg_name +
-                             " user=" + self.pg_user +
-                             " password=" + self.pg_pass) as conn:
-            sql_parser: SqlParser = SqlParser(conn)
-            try:
+        try:
+            with psycopg.connect(
+                "host=" + self.pg_host
+                + " port=" + self.pg_port
+                + " dbname=" + self.pg_name
+                + " user=" + self.pg_user
+                + " password=" + self.pg_pass
+            ) as conn:
+                sql_parser: SqlParser = SqlParser(conn)
                 sanitized_sql: exp.Expression = sql_parser.parse_one(sql_query)
-            except Exception as e:
-                # Either the sql had syntax error and we let postgresql report
-                # the error or something went terribly wrong in the sqlparsing
-                # library, either we we give up the analysis.
-                return ""
-            qep_analysis: QEPAnalysis = QEPParser(conn=conn).parse(sql_query)
-            analysis_result: Optional[str] = None
+                qep_analysis: QEPAnalysis = QEPParser(conn=conn).parse(sql_query)
+                analysis_result: Optional[str] = None
 
-            # Comparing different domains
-            columns: list[Column] = sql_parser.get_query_columns(sanitized_sql)
-            analysis_result = CmpDomainChecker(sanitized_sql, columns).check()
+                # Comparing different domains
+                columns: list[Column] = sql_parser.get_query_columns(sanitized_sql)
+                analysis_result = CmpDomainChecker(
+                    sanitized_sql,
+                    columns
+                ).check()
 
-            if analysis_result is not None:
-                return analysis_result
+                if analysis_result is not None:
+                    return analysis_result
 
-            # ORDER BY in subquery
-            analysis_result = \
-                SubqueryOrderByChecker(sanitized_sql, qep_analysis).check()
+                # ORDER BY in subquery
+                analysis_result = SubqueryOrderByChecker(
+                    sanitized_sql,
+                    qep_analysis
+                ).check()
 
-            if analysis_result is not None:
-                return analysis_result
+                if analysis_result is not None:
+                    return analysis_result
 
-            # SELECT in subquery
-            analysis_result = \
-                SubquerySelectChecker(sanitized_sql, sql_parser).check()
+                # Implied expression
+                analysis_result = ImpliedExpressionChecker(
+                    sanitized_sql,
+                    sql_query,
+                    conn
+                ).check()
 
-            if analysis_result is not None:
-                return analysis_result
+                if analysis_result is not None:
+                    return analysis_result
 
-            # Implied expression
-            analysis_result = \
-                ImpliedExpressionChecker(sanitized_sql, sql_query,
-                                         conn).check()
+                # Inconsistent expression
+                analysis_result = InconsistentExpressionChecker(
+                    sanitized_sql,
+                    qep_analysis
+                ).check()
 
-            if analysis_result is not None:
-                return analysis_result
+                if analysis_result is not None:
+                    return analysis_result
 
-            # Strange HAVING clause without GROUP BY
-            analysis_result = \
-                StrangeHavingChecker(sanitized_sql, qep_analysis).check()
+                # SELECT in subquery
+                analysis_result = SubquerySelectChecker(
+                    sanitized_sql,
+                    sql_parser
+                ).check()
 
-            if analysis_result is not None:
-                return analysis_result
+                if analysis_result is not None:
+                    return analysis_result
 
-            # SUM/AVG(DISTINCT)
-            analysis_result = \
-                SumDistinctChecker(sanitized_sql, qep_analysis).check()
+                # Strange HAVING clause without GROUP BY
+                analysis_result = StrangeHavingChecker(
+                    sanitized_sql,
+                    qep_analysis
+                ).check()
 
-            if analysis_result is not None:
-                return analysis_result
+                if analysis_result is not None:
+                    return analysis_result
 
-            # Wildcards without LIKE
-            analysis_result = \
-                EqWildcardChecker(sanitized_sql, qep_analysis).check()
+                # SUM/AVG(DISTINCT)
+                analysis_result = SumDistinctChecker(
+                    sanitized_sql,
+                    qep_analysis
+                ).check()
 
-            if analysis_result is not None:
-                return analysis_result
+                if analysis_result is not None:
+                    return analysis_result
 
-            # Inconsistent expression
-            analysis_result = \
-                InconsistentExpressionChecker(sanitized_sql, qep_analysis).check()
+                # Wildcards without LIKE
+                analysis_result = EqWildcardChecker(
+                    sanitized_sql,
+                    qep_analysis
+                ).check()
 
-            if analysis_result is not None:
-                return analysis_result
+                if analysis_result is not None:
+                    return analysis_result
 
-        return ""  # No semantic errors found
+            return ""  # No semantic errors found
+
+        # SQL parser, QEP parser, or an analysis module exploded:
+        except Exception:  # Matches only program errors (see flake8 rule E722)
+            return ""
