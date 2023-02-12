@@ -1,3 +1,11 @@
+# THIS IS AN ARCHIVAL REPOSITORY
+
+No PostgreSQL for novices is being done here. Since original repository is for the moment in some sort of limbo, this acts as a reference for job seeking.
+
+PostgreSQL for novices is available on PyPI. `pip install pg4n` PyPI version is slightly newer than this repository due to a single team member putting in late hours to get course mark.
+
+`PostgreSQL for novices` is a wrapper program for `psql` written in Python that uses `pexpect` to intercept & inject terminal data, `psycopg` for fetching database diagnostics, `pyparsing` for parsing terminal data, and a bunch of other libraries.
+
 # PostgreSQL for novices
 
 [📄 Documentation](https://project-c-sql.github.io/)
