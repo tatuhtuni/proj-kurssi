@@ -1,5 +1,7 @@
 # THIS IS AN ARCHIVAL REPOSITORY
 
+_Update 24.2_: Original repository with its intact issue tracker is now available on [https://github.com/tonitaip-2020/postgresql-for-novices](https://github.com/tonitaip-2020/postgresql-for-novices)
+
 No PostgreSQL for novices is being done here. Since original repository is for the moment in some sort of limbo, this acts as a reference for job seeking.
 
 PostgreSQL for novices is available on PyPI. `pip install pg4n` PyPI version is slightly newer than this repository due to a single team member putting in late hours to get course mark.
